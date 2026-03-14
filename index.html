@@ -2,75 +2,139 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitFluence - 나만의 피트니스 인플루언서 가이드</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Fit Fluencer Group 전용 추첨기 (1~1000)</title>
+    <style>
+        :root {
+            --fit-blue: #007bff; --fit-green: #28a745; --fit-red: #dc3545;
+            --fit-orange: #fd7e14; --fit-luck: #6f42c1; --bg-color: #121212;
+        }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
+        #setupArea { position: absolute; top: 10px; left: 10px; background: #333; padding: 15px; border-radius: 10px; font-size: 13px; z-index: 100; border: 1px solid #444; }
+        
+        .main-container { display: flex; gap: 40px; background: #1e1e1e; padding: 40px; border-radius: 25px; width: 1080px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        
+        .lottery-section { flex: 1.2; text-align: center; border-right: 1px solid #333; padding-right: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #currentPrize { font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; color: #888; min-height: 40px; }
+        #display { font-size: 120px; font-weight: 900; letter-spacing: 10px; margin: 10px 0; background: #000; padding: 20px 40px; border-radius: 15px; font-family: monospace; min-width: 380px; box-shadow: inset 0 0 15px rgba(255,255,255,0.1); color: #fff; }
+        
+        .brand-area { margin-top: 30px; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #logoImg { width: 300px; height: auto; margin-bottom: 15px; display: none; }
+        .congrats-msg { font-size: 2.2rem; font-weight: bold; color: #f1c40f; text-shadow: 0 0 10px rgba(241,196,15,0.4); }
+
+        #stopBtn { padding: 18px 60px; font-size: 1.6rem; background: var(--fit-red); color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 20px; display: none; width: 100%; font-weight: bold; }
+
+        .list-section { flex: 1.6; }
+        .prize-item { display: flex; align-items: flex-start; background: #282828; margin-bottom: 15px; padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        .draw-btn { width: 80px; height: 55px; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .prize-info { margin-left: 20px; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        .prize-name { font-weight: bold; font-size: 1.3rem; color: #ddd; }
+        .winner-list { font-family: monospace; font-size: 1.4rem; font-weight: bold; color: #fff; display: flex; flex-wrap: wrap; gap: 10px; }
+        
+        .btn-blue { background-color: var(--fit-blue); } 
+        .btn-green { background-color: var(--fit-green); } 
+        .btn-red { background-color: var(--fit-red); } 
+        .btn-orange { background-color: var(--fit-orange); } 
+        .btn-luck { background-color: var(--fit-luck); }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="container">
-            <div class="logo">Fit<span>Fluence</span></div>
-            <ul class="nav-links">
-                <li><a href="#features">기능</a></li>
-                <li><a href="#influencers">인플루언서</a></li>
-                <li><a href="#about">소개</a></li>
-                <li><a href="#" class="btn-primary">시작하기</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <main>
-        <section class="hero container">
-            <div class="hero-content">
-                <h1>당신의 피트니스 여정,<br>최고의 전문가와 함께하세요</h1>
-                <p>FitFluence는 당신의 목표에 딱 맞는 피트니스 인플루언서를 연결하고 개인화된 운동 플랜을 제공합니다.</p>
-                <div class="hero-btns">
-                    <a href="#" class="btn-primary">지금 무료로 시작하기</a>
-                    <a href="#" class="btn-secondary">더 알아보기</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <div class="placeholder-img">FitFluence Hero Image</div>
-            </div>
-        </section>
+    <div id="setupArea">
+        <strong>⚙️ 최초 로고 설정:</strong> <br>
+        <input type="file" id="logoLoader" accept="image/*">
+    </div>
 
-        <section id="features" class="features container">
-            <h2 class="section-title">주요 기능</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <i class="fas fa-search"></i>
-                    <h3>맞춤형 매칭</h3>
-                    <p>당신의 체형, 목표, 선호 스타일에 기반하여 최적의 인플루언서를 추천합니다.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-calendar-check"></i>
-                    <h3>프로그램 관리</h3>
-                    <p>전문가가 직접 설계한 운동 프로그램을 체계적으로 관리하고 기록하세요.</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-users"></i>
-                    <h3>커뮤니티</h3>
-                    <p>같은 목표를 가진 사람들과 소통하며 동기부여를 얻으세요.</p>
-                </div>
+    <div class="main-container">
+        <div class="lottery-section">
+            <div id="currentPrize">범위: 0001 ~ 1000</div>
+            <div id="display">0001</div>
+            <button id="stopBtn" onclick="stopLottery()">정지!</button>
+            
+            <div class="brand-area">
+                <img id="logoImg" src="" alt="Fit Fluencer Logo">
+                <div class="congrats-msg">당첨을 축하합니다!</div>
             </div>
-        </section>
-
-        <section id="cta" class="cta">
-            <div class="container">
-                <h2>더 건강한 삶을 위한 첫 걸음</h2>
-                <p>지금 바로 FitFluence의 일원이 되어 변화를 시작하세요.</p>
-                <a href="#" class="btn-light">앱 다운로드하기</a>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 FitFluence. All rights reserved.</p>
         </div>
-    </footer>
 
-    <script src="main.js"></script>
+        <div class="list-section">
+            <h2 style="margin-top:0; color:#fff; font-size:1.8rem;">🏆 당첨자 명단 (1~1000번)</h2>
+            <div class="prize-item"><button class="draw-btn btn-blue" onclick="prepareDraw('핏블루상')">추첨</button><div class="prize-info"><span class="prize-name">핏블루상</span><div class="winner-list" id="win-핏블루상"></div></div></div>
+            <div class="prize-item"><button class="draw-btn btn-green" onclick="prepareDraw('핏그린상')">추첨</button><div class="prize-info"><span class="prize-name">핏그린상</span><div class="winner-list" id="win-핏그린상"></div></div></div>
+            <div class="prize-item"><button class="draw-btn btn-red" onclick="prepareDraw('핏레드상')">추첨</button><div class="prize-info"><span class="prize-name">핏레드상</span><div class="winner-list" id="win-핏레드상"></div></div></div>
+            <div class="prize-item"><button class="draw-btn btn-orange" onclick="prepareDraw('핏오렌지상')">추첨</button><div class="prize-info"><span class="prize-name">핏오렌지상</span><div class="winner-list" id="win-핏오렌지상"></div></div></div>
+            <div class="prize-item"><button class="draw-btn btn-luck" onclick="prepareDraw('핏행운상')">추첨</button><div class="prize-info"><span class="prize-name">핏행운상</span><div class="winner-list" id="win-핏행운상"></div></div></div>
+        </div>
+    </div>
+
+<script>
+    let timer;
+    let currentPrizeName = "";
+    const display = document.getElementById('display');
+    const stopBtn = document.getElementById('stopBtn');
+    const currentPrizeLabel = document.getElementById('currentPrize');
+    const logoImg = document.getElementById('logoImg');
+    const setupArea = document.getElementById('setupArea');
+
+    window.onload = function() {
+        const savedLogo = localStorage.getItem('fit_fluencer_logo');
+        if (savedLogo) {
+            logoImg.src = savedLogo;
+            logoImg.style.display = 'block';
+            setupArea.style.display = 'none';
+        }
+    };
+
+    document.getElementById('logoLoader').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64Data = event.target.result;
+                localStorage.setItem('fit_fluencer_logo', base64Data);
+                logoImg.src = base64Data;
+                logoImg.style.display = 'block';
+                setupArea.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 추첨 시작 기능
+    function prepareDraw(prizeName) {
+        if (timer) return;
+        currentPrizeName = prizeName;
+        currentPrizeLabel.innerText = `[${prizeName}] 추첨 중...`;
+        currentPrizeLabel.style.color = getPrizeColor(prizeName);
+        display.style.color = '#fff';
+        stopBtn.style.display = 'block';
+
+        timer = setInterval(() => {
+            // [수정된 로직] 1부터 1000 사이의 숫자만 생성
+            const num = (Math.floor(Math.random() * 1000) + 1).toString().padStart(4, '0');
+            display.innerText = num;
+        }, 30);
+    }
+
+    function stopLottery() {
+        clearInterval(timer);
+        timer = null;
+        const winningNum = display.innerText;
+        const winnerDisplay = document.getElementById(`win-${currentPrizeName}`);
+        
+        const newWin = document.createElement('span');
+        newWin.innerText = (winnerDisplay.children.length > 0 ? ", " : "") + winningNum;
+        winnerDisplay.appendChild(newWin);
+
+        stopBtn.style.display = 'none';
+        currentPrizeLabel.innerText = `${currentPrizeName} 당첨 완료!`;
+        display.style.color = getPrizeColor(currentPrizeName);
+    }
+
+    function getPrizeColor(prize) {
+        const colors = { '핏블루상': '#007bff', '핏그린상': '#28a745', '핏레드상': '#dc3545', '핏오렌지상': '#fd7e14', '핏행운상': '#6f42c1' };
+        return colors[prize] || '#fff';
+    }
+</script>
 </body>
 </html>

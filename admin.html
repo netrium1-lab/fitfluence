@@ -54,7 +54,7 @@
                 </div>
                 <div class="form-group"><label>🔗 유튜브 배너 링크</label><input type="text" id="bannerLink"></div>
                 <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
-                <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()"></div><input type="file" id="fIn" style="display:none" onchange="pick(this)" accept="image/*"></div>
+                <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
                 <button class="btn" onclick="saveDesign()">모든 설정 서버 저장</button>
             </div>
         </div>
@@ -105,7 +105,6 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // 이미지 압축 함수
         function compressImg(file, maxW, quality) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -126,11 +125,11 @@
         }
 
         let pickedImgUrl = "";
-        async function pick(i) {
-            if(i.files[0]) {
+        window.pickHero = async function(input) {
+            if(input.files[0]) {
                 showStatus("이미지 최적화 중...");
                 try {
-                    const compressedData = await compressImg(i.files[0], 1200, 0.6);
+                    const compressedData = await compressImg(input.files[0], 1200, 0.6);
                     showStatus("이미지 업로드 중...");
                     const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
                     const snap = await ref.putString(compressedData, 'data_url');
@@ -149,17 +148,11 @@
                 logo: document.getElementById('siteLogo').value,
                 img: pickedImgUrl || (document.querySelector('#preview img')?.src) || ""
             };
-            
-            // 용량 체크: Firestore 문서는 최대 1MB
-            if (JSON.stringify(cfg).length > 1000000) {
-                hideStatus(); return alert("배경 이미지 용량이 너무 큽니다. 다른 이미지를 선택해 주세요.");
-            }
-
             try {
                 await db.collection('config').doc('site').set(cfg);
                 localStorage.setItem('fitConfig', JSON.stringify(cfg));
                 alert('완료!');
-            } catch(e) { alert("저장 실패: " + e.message); }
+            } catch(e) { alert("오류: " + e.message); }
             hideStatus();
         }
 
@@ -209,30 +202,56 @@
 
         function backupData() { const d = { config: localStorage.getItem('fitConfig'), posts: localStorage.getItem('fitPosts'), survey: localStorage.getItem('fitSurveyMaster'), consults: localStorage.getItem('fitConsults') }; const b = new Blob([JSON.stringify(d)], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `FIT_BACKUP.json`; l.click(); }
 
+        // [최종 해결] 대용량 이미지 처리 기능이 포함된 복구 로직
         async function restoreData(input) {
             if(!input.files[0]) return;
             const reader = new FileReader();
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
-                if(confirm('서버 복구를 시작할까요? (용량이 큰 이미지는 건너뛸 수 있습니다)')) {
-                    showStatus("데이터 전송 중...");
+                if(confirm('서버 복구를 시작할까요? (용량이 큰 사진은 자동 처리됩니다)')) {
+                    showStatus("데이터 분석 중...");
                     try {
-                        if(data.config) await db.collection('config').doc('site').set(JSON.parse(data.config));
-                        if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
+                        // 1. Config 복구 (이미지가 크면 Storage로 우회)
+                        if(data.config) {
+                            let cfg = JSON.parse(data.config);
+                            if(cfg.img && cfg.img.startsWith('data:') && cfg.img.length > 800000) {
+                                showStatus("배경 이미지 대용량 처리 중...");
+                                const ref = storage.ref().child(`config/restored_hero.jpg`);
+                                const snap = await ref.putString(cfg.img, 'data_url');
+                                cfg.img = await snap.ref.getDownloadURL();
+                            }
+                            await db.collection('config').doc('site').set(cfg);
+                        }
+                        
+                        // 2. Survey 복구
+                        if(data.survey) {
+                            const s = JSON.parse(data.survey);
+                            await db.collection('config').doc('surveyMaster').set({ items: s });
+                        }
+                        
+                        // 3. Posts 복구 (이미지가 크면 Storage로 우회)
                         if(data.posts) {
                             const ps = JSON.parse(data.posts);
                             for(let i=0; i<ps.length; i++) {
-                                showStatus(`게시글 전송 중 (${i+1}/${ps.length})`);
-                                // 용량 체크 (1MB 초과 시 이미지 제외)
+                                showStatus(`게시글 복구 중 (${i+1}/${ps.length})`);
                                 let post = ps[i];
-                                if (JSON.stringify(post).length > 1000000) {
-                                    post.image = ""; // 이미지 제거하여 전송 성공 보장
+                                if(post.image && post.image.startsWith('data:') && post.image.length > 800000) {
+                                    try {
+                                        const ref = storage.ref().child(`posts/restored_${Date.now()}_${i}.jpg`);
+                                        const snap = await ref.putString(post.image, 'data_url');
+                                        post.image = await snap.ref.getDownloadURL();
+                                    } catch(err) { post.image = ""; } // 업로드 실패 시 이미지만 비움
                                 }
-                                await db.collection('posts').doc(String(post.id)).set({ ...post, sortIndex: i });
+                                await db.collection('posts').doc(String(post.id)).set({
+                                    ...post, 
+                                    sortIndex: i,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
                             }
                         }
-                        alert('서버 복구 완료!'); location.reload();
-                    } catch(err) { alert("오류: " + err.message); }
+                        alert('서버 복구가 성공적으로 완료되었습니다!');
+                        location.reload();
+                    } catch(err) { alert("복구 실패: " + err.message); }
                     hideStatus();
                 }
             };
@@ -240,13 +259,18 @@
         }
 
         window.onload = async function() {
-            const doc = await db.collection('config').doc('site').get();
-            const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
-            document.getElementById('adminPw').value = cfg.pw;
-            document.getElementById('bannerLink').value = cfg.bannerLink || "";
-            document.getElementById('siteLogo').value = cfg.logo || "";
-            if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
-            loadP();
+            try {
+                const doc = await db.collection('config').doc('site').get();
+                const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
+                document.getElementById('adminPw').value = cfg.pw;
+                document.getElementById('bannerLink').value = cfg.bannerLink || "";
+                document.getElementById('siteLogo').value = cfg.logo || "";
+                if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
+                loadP();
+            } catch(e) { 
+                document.getElementById('adminBody').style.display = 'flex'; 
+                loadP();
+            }
         }
     </script>
 </body>

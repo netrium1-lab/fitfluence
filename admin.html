@@ -11,36 +11,26 @@
     <style>
         :root { --gold: #D4AF37; --bg: #f4f7f6; --white: #ffffff; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; overflow-x: hidden; }
-        
-        /* Layout */
         .admin-wrapper { display: flex; min-height: 100vh; flex-direction: column; }
         .sidebar { width: 100%; background: #fff; border-bottom: 1px solid #eee; padding: 20px; box-sizing: border-box; }
         .sidebar h2 { color: var(--gold); margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 900; }
         .menu-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .menu-item { padding: 10px 15px; cursor: pointer; border-radius: 8px; color: #666; white-space: nowrap; font-size: 0.9rem; background: #f9f9f9; flex-shrink: 0; }
         .menu-item.active { background: var(--gold); color: #fff; font-weight: bold; }
-
         .main-content { flex: 1; padding: 20px; box-sizing: border-box; }
         .card { background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .tab { display: none; } .tab.active { display: block; }
-        
-        /* Forms */
         .form-group { margin-bottom: 20px; padding: 15px; background: #fafafa; border-radius: 15px; border: 1px solid #eee; }
         label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
         input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
         .btn { background: var(--gold); color: #fff; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; margin-top: 10px; }
         .btn-sub { background: #333; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
-
-        /* Tables & Lists */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
         th, td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: left; }
         .order-btn { padding: 4px 8px; background: #eee; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; margin-bottom: 2px; }
-
         #preview { width: 100%; height: 180px; background: #eee; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Status Overlay */
-        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
 
         @media (min-width: 768px) {
             .admin-wrapper { flex-direction: row; }
@@ -66,7 +56,6 @@
         </div>
 
         <div class="main-content">
-            <!-- 1. Design Tab -->
             <div id="design" class="tab active">
                 <div class="card">
                     <h1>⚙️ 사이트 및 배너 설정</h1>
@@ -74,18 +63,17 @@
                     <div class="form-group" style="background: #fff9e6;">
                         <label>🛡️ 데이터 동기화 (서버 전송)</label>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn-sub" style="background:#ffcc00; color:#000; font-weight:bold;" onclick="document.getElementById('importIn').click()">📂 서버로 데이터 복구</button>
+                            <button class="btn-sub" style="background:#ffcc00; color:#000; font-weight:bold;" onclick="document.getElementById('importIn').click()">📂 서버로 전체 데이터 복구</button>
                             <input type="file" id="importIn" style="display:none" onchange="restoreData(this)" accept=".json">
                         </div>
                     </div>
                     <div class="form-group"><label>🔗 유튜브 채널 링크</label><input type="text" id="bannerLink"></div>
                     <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
-                    <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
+                    <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">배경 이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
                     <button class="btn" id="saveBtn" onclick="saveDesign()">모든 설정 서버 저장</button>
                 </div>
             </div>
 
-            <!-- 2. Posts Tab -->
             <div id="posts" class="tab">
                 <div class="card">
                     <h1>📝 게시글 관리</h1>
@@ -96,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- 3. Survey Tab -->
             <div id="survey" class="tab">
                 <div class="card">
                     <h1>📋 설문 주제 생성</h1>
@@ -110,7 +97,6 @@
                 </div>
             </div>
 
-            <!-- 4. Consult Tab -->
             <div id="consult" class="tab">
                 <div class="card">
                     <h1>👤 상담 신청 명단</h1>
@@ -122,7 +108,7 @@
         </div>
     </div>
 
-    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2><p>잠시만 기다려주세요.</p></div>
+    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2><p>잠시만 기다려주세요. 창을 닫지 마세요.</p></div>
 
     <script>
         const firebaseConfig = {
@@ -155,47 +141,75 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // --- 1. Design & Hero Image ---
+        // --- 1. Design & Hero Image (With Compression) ---
         let pickedImgUrl = "";
-        window.pickHero = function(input) {
+        
+        function resizeImg(file, maxW, quality) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if(w > maxW) { h = h * (maxW/w); w = maxW; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.pickHero = async function(input) {
             if(!input.files[0]) return;
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async e => {
-                showStatus("이미지 업로드 중...");
-                try {
-                    const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
-                    const snap = await ref.putString(e.target.result, 'data_url');
-                    pickedImgUrl = await snap.ref.getDownloadURL();
-                    document.getElementById('preview').innerHTML = `<img src="${pickedImgUrl}">`;
-                } catch(err) { alert("업로드 실패: " + err.message); }
-                hideStatus();
-            };
-            reader.readAsDataURL(file);
+            showStatus("이미지 최적화 및 업로드 중...");
+            try {
+                // 대폭 압축 (속도 향상)
+                const compressedData = await resizeImg(input.files[0], 1200, 0.6);
+                const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
+                const snap = await ref.putString(compressedData, 'data_url');
+                pickedImgUrl = await snap.ref.getDownloadURL();
+                document.getElementById('preview').innerHTML = `<img src="${pickedImgUrl}">`;
+                alert("배경 이미지 업로드 완료! '서버 저장' 버튼을 꼭 눌러주세요.");
+            } catch(err) { alert("업로드 실패: " + err.message); }
+            hideStatus();
         }
 
         async function saveDesign() {
-            showStatus("서버 저장 중...");
+            showStatus("사이트 설정 서버 저장 중...");
+            const currentImg = document.querySelector('#preview img')?.src || "";
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
                 bannerLink: document.getElementById('bannerLink').value,
                 logo: document.getElementById('siteLogo').value,
-                img: pickedImgUrl || (document.querySelector('#preview img')?.src) || ""
+                img: pickedImgUrl || currentImg
             };
-            await db.collection('config').doc('site').set(cfg);
-            localStorage.setItem('fitConfig', JSON.stringify(cfg));
+            try {
+                await db.collection('config').doc('site').set(cfg);
+                localStorage.setItem('fitConfig', JSON.stringify(cfg));
+                alert('서버와 완벽하게 동기화되었습니다!');
+            } catch(e) { alert("저장 실패: " + e.message); }
             hideStatus();
-            alert('서버와 동기화되었습니다!');
         }
 
-        // --- 2. Posts (Force Cloud Sync) ---
+        // --- 2. Posts ---
         let globalPosts = [];
         async function loadP() {
-            const snap = await db.collection('posts').get();
-            globalPosts = [];
-            snap.forEach(doc => { var d = doc.data(); d.id = doc.id; globalPosts.push(d); });
-            globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
-            renderPostTable();
+            try {
+                const snap = await db.collection('posts').get();
+                globalPosts = [];
+                snap.forEach(doc => { var d = doc.data(); d.id = doc.id; globalPosts.push(d); });
+                globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
+                
+                // Merge with local if cloud is empty
+                if(globalPosts.length === 0) {
+                    globalPosts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                }
+                renderPostTable();
+            } catch(e) { console.error(e); }
         }
 
         function renderPostTable() {
@@ -222,13 +236,17 @@
             globalPosts[newIndex] = temp;
             renderPostTable();
             for(let i=0; i < globalPosts.length; i++) {
-                await db.collection('posts').doc(globalPosts[i].id).update({ sortIndex: i });
+                if(globalPosts[i].id && globalPosts[i].id.length > 5) {
+                    await db.collection('posts').doc(globalPosts[i].id).update({ sortIndex: i });
+                }
             }
         }
 
         async function delP(id) {
             if(confirm('정말 삭제할까요?')) {
-                await db.collection('posts').doc(id).delete();
+                try { await db.collection('posts').doc(id).delete(); } catch(e) {}
+                globalPosts = globalPosts.filter(p => String(p.id) !== String(id));
+                localStorage.setItem('fitPosts', JSON.stringify(globalPosts));
                 loadP();
             }
         }
@@ -237,22 +255,23 @@
         let editIdx = null;
         async function addTopic() {
             const t = document.getElementById('newT').value; const o = document.getElementById('newO').value;
-            if(!t || !o) return alert('주제와 옵션을 입력하세요.');
+            if(!t || !o) return alert('내용 입력!');
             const doc = await db.collection('config').doc('surveyMaster').get();
             let s = doc.exists ? doc.data().items : [];
-            if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; document.getElementById('addBtn').innerText = "주제 추가/수정"; } 
+            if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; document.getElementById('addBtn').innerText = "주제 추가"; } 
             else { s.push({t, o}); }
             await db.collection('config').doc('surveyMaster').set({ items: s });
+            localStorage.setItem('fitSurveyMaster', JSON.stringify(s));
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             renderTopics();
         }
 
         async function renderTopics() {
             const doc = await db.collection('config').doc('surveyMaster').get();
-            let s = doc.exists ? doc.data().items : [];
+            let s = doc.exists ? doc.data().items : JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
             document.getElementById('topicList').innerHTML = s.map((t, i) => `
                 <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="max-width:70%;"><b>${i+1}. ${t.t || t.q}</b><br><small style="color:#888;">${t.o}</small></div>
+                    <div style="max-width:70%;"><b>${i+1}. ${t.t || t.q}</b><br><small>${t.o}</small></div>
                     <div><button onclick="editT(${i})" style="color:blue;border:none;background:none;font-weight:bold;margin-right:10px;">수정</button>
                     <button onclick="delT(${i})" style="color:red;border:none;background:none;font-weight:bold;">삭제</button></div>
                 </div>`).join('');
@@ -268,7 +287,7 @@
         }
 
         async function delT(i) {
-            if(confirm('삭제할까요?')) {
+            if(confirm('삭제?')) {
                 const doc = await db.collection('config').doc('surveyMaster').get();
                 let s = doc.data().items; s.splice(i, 1);
                 await db.collection('config').doc('surveyMaster').set({ items: s });
@@ -278,13 +297,15 @@
 
         // --- 4. Consults ---
         async function loadC() {
-            const snap = await db.collection('consults').orderBy('createdAt','desc').get();
-            let html = "";
-            snap.forEach(doc => {
-                const c = doc.data();
-                html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleDateString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`;
-            });
-            document.getElementById('cList').innerHTML = html || "<tr><td colspan='4' style='text-align:center;'>신청 내역이 없습니다.</td></tr>";
+            try {
+                const snap = await db.collection('consults').orderBy('createdAt','desc').get();
+                let html = "";
+                snap.forEach(doc => {
+                    const c = doc.data();
+                    html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleDateString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`;
+                });
+                document.getElementById('cList').innerHTML = html || "<tr><td colspan='4' style='text-align:center;'>내역 없음</td></tr>";
+            } catch(e) { console.warn(e); }
         }
 
         async function restoreData(input) {
@@ -292,30 +313,46 @@
             const reader = new FileReader();
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
-                if(confirm('서버의 모든 데이터를 이 파일로 교체할까요?')) {
-                    showStatus("서버 전체 복구 중...");
-                    if(data.config) await db.collection('config').doc('site').set(JSON.parse(data.config));
-                    if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
-                    if(data.posts) {
-                        const ps = JSON.parse(data.posts);
-                        for(let i=0; i<ps.length; i++) {
-                            await db.collection('posts').doc(String(ps[i].id)).set({ ...ps[i], sortIndex: i });
+                if(confirm('서버의 모든 데이터를 이 파일로 교체할까요? (시간이 걸릴 수 있습니다)')) {
+                    showStatus("데이터 서버 복구 중...");
+                    try {
+                        if(data.config) {
+                            const cfg = JSON.parse(data.config);
+                            await db.collection('config').doc('site').set(cfg);
                         }
-                    }
-                    hideStatus(); alert('전체 복구 완료!'); location.reload();
+                        if(data.survey) {
+                            const s = JSON.parse(data.survey);
+                            await db.collection('config').doc('surveyMaster').set({ items: s });
+                        }
+                        if(data.posts) {
+                            const ps = JSON.parse(data.posts);
+                            for(let i=0; i<ps.length; i++) {
+                                showStatus(`게시글 복구 중... (${i+1}/${ps.length})`);
+                                await db.collection('posts').doc(String(ps[i].id)).set({ ...ps[i], sortIndex: i });
+                            }
+                        }
+                        alert('전체 서버 복구가 완료되었습니다!');
+                        location.reload();
+                    } catch(err) { alert("복구 실패: " + err.message); }
+                    hideStatus();
                 }
             };
             reader.readAsText(input.files[0]);
         }
 
         window.onload = async function() {
-            const doc = await db.collection('config').doc('site').get();
-            const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
-            document.getElementById('adminPw').value = cfg.pw;
-            document.getElementById('bannerLink').value = cfg.bannerLink || "";
-            document.getElementById('siteLogo').value = cfg.logo || "";
-            if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
-            loadP();
+            try {
+                const doc = await db.collection('config').doc('site').get();
+                const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
+                document.getElementById('adminPw').value = cfg.pw;
+                document.getElementById('bannerLink').value = cfg.bannerLink || "";
+                document.getElementById('siteLogo').value = cfg.logo || "";
+                if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
+                loadP();
+            } catch(e) { 
+                document.getElementById('adminBody').style.display = 'block'; 
+                loadP();
+            }
         }
     </script>
 </body>

@@ -5,14 +5,11 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      ".git/**"
+      ".git/**",
+      "deploy.sh"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
+    "cleanUrls": true,
+    "trailingSlash": false
   },
   "firestore": {
     "rules": "firestore.rules",

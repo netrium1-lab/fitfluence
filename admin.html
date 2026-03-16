@@ -2,113 +2,83 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FIT-FLUENCE 통합 관리자</title>
+    <title>FIT-FLUENCE 관리 시스템 - 통합 관제탑</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --gold: #D4AF37; --bg: #f4f7f6; --white: #ffffff; }
-        body { font-family: 'Pretendard', sans-serif; margin: 0; background: var(--bg); color: #333; overflow-x: hidden; }
-        .admin-wrapper { display: flex; min-height: 100vh; flex-direction: column; }
-        .sidebar { width: 100%; background: #fff; border-bottom: 1px solid #eee; padding: 20px; box-sizing: border-box; }
-        .sidebar h2 { color: var(--gold); margin: 0 0 20px 0; font-size: 1.2rem; font-weight: 900; }
-        .menu-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
-        .menu-item { padding: 10px 15px; cursor: pointer; border-radius: 8px; color: #666; white-space: nowrap; font-size: 0.9rem; background: #f9f9f9; flex-shrink: 0; }
-        .menu-item.active { background: var(--gold); color: #fff; font-weight: bold; }
-        .main-content { flex: 1; padding: 20px; box-sizing: border-box; }
-        .card { background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        :root { --gold: #D4AF37; --bg: #f4f7f6; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #333; }
+        .sidebar { width: 280px; background: #fff; border-right: 1px solid #eee; padding: 40px 30px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.4rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
+        .menu-item { padding: 15px 20px; cursor: pointer; border-radius: 12px; margin-bottom: 10px; color: #666; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
+        .menu-item.active { background: #fdfaf0; color: var(--gold); font-weight: bold; }
+        .main { flex: 1; padding: 60px; overflow-y: auto; }
+        .card { background: #fff; padding: 45px; border-radius: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.05); margin-bottom: 35px; }
         .tab { display: none; } .tab.active { display: block; }
-        .form-group { margin-bottom: 20px; padding: 15px; background: #fafafa; border-radius: 15px; border: 1px solid #eee; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
-        .btn { background: var(--gold); color: #fff; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; margin-top: 10px; }
-        .btn-sub { background: #333; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
-        th, td { padding: 12px 8px; border-bottom: 1px solid #eee; text-align: left; }
-        .order-btn { padding: 4px 8px; background: #eee; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; margin-bottom: 2px; }
-        #preview { width: 100%; height: 180px; background: #eee; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
+        .form-group { margin-bottom: 25px; padding: 25px; background: #fafafa; border-radius: 20px; border: 1px solid #eee; }
+        label { display: block; margin-bottom: 12px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; }
+        .btn { background: var(--gold); color: #fff; border: none; padding: 18px; border-radius: 15px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 1.1rem; }
+        .btn-sub { background: #333; color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; font-weight: bold; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th, td { padding: 18px; border-bottom: 1px solid #eee; text-align: left; }
+        #preview { width: 100%; height: 200px; background: #eee; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
-        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-
-        @media (min-width: 768px) {
-            .admin-wrapper { flex-direction: row; }
-            .sidebar { width: 280px; border-bottom: none; border-right: 1px solid #eee; padding: 40px 30px; }
-            .menu-container { flex-direction: column; }
-            .main-content { padding: 60px; }
-            .card { padding: 45px; }
-            .sidebar h2 { font-size: 1.4rem; margin-bottom: 50px; }
-        }
+        
+        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body id="adminBody" style="display:none;">
-    <div class="admin-wrapper">
-        <div class="sidebar">
-            <h2>FIT-FLUENCE 관리</h2>
-            <div class="menu-container">
-                <div class="menu-item active" onclick="showTab('design', this)">⚙️ 사이트 설정</div>
-                <div class="menu-item" onclick="showTab('posts', this)">📝 게시글 관리</div>
-                <div class="menu-item" onclick="showTab('survey', this)">📋 설문 생성</div>
-                <div class="menu-item" onclick="showTab('consult', this)">👤 신청 명단</div>
-            </div>
-            <div style="margin-top:auto; padding-top:20px;"><a href="index.html" style="text-decoration:none; color:#999; font-weight:bold; font-size:0.85rem;">홈페이지 보기 →</a></div>
-        </div>
-
-        <div class="main-content">
-            <div id="design" class="tab active">
-                <div class="card">
-                    <h1>⚙️ 사이트 및 배너 설정</h1>
-                    <div class="form-group"><label>🔐 관리자 비번</label><input type="password" id="adminPw"></div>
-                    <div class="form-group" style="background: #fff9e6;">
-                        <label>🛡️ 데이터 동기화 (서버 전송)</label>
-                        <div style="display:flex; gap:10px;">
-                            <button class="btn-sub" style="background:#ffcc00; color:#000; font-weight:bold;" onclick="document.getElementById('importIn').click()">📂 서버로 전체 데이터 복구</button>
-                            <input type="file" id="importIn" style="display:none" onchange="restoreData(this)" accept=".json">
-                        </div>
-                    </div>
-                    <div class="form-group"><label>🔗 유튜브 채널 링크</label><input type="text" id="bannerLink"></div>
-                    <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
-                    <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">배경 이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
-                    <button class="btn" id="saveBtn" onclick="saveDesign()">모든 설정 서버 저장</button>
-                </div>
-            </div>
-
-            <div id="posts" class="tab">
-                <div class="card">
-                    <h1>📝 게시글 관리</h1>
-                    <button class="btn" style="width:auto; padding:10px 30px; margin-bottom:20px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
-                    <div style="overflow-x:auto;">
-                        <table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="survey" class="tab">
-                <div class="card">
-                    <h1>📋 설문 주제 생성</h1>
-                    <div class="form-group">
-                        <label>주제</label><input type="text" id="newT" placeholder="예: 평소 식습관은?">
-                        <br><br>
-                        <label>옵션(콤마구분)</label><input type="text" id="newO" placeholder="예: 좋음, 보통, 나쁨">
-                        <button class="btn" id="addBtn" onclick="addTopic()">주제 추가/수정</button>
-                    </div>
-                    <div id="topicList"></div>
-                </div>
-            </div>
-
-            <div id="consult" class="tab">
-                <div class="card">
-                    <h1>👤 상담 신청 명단</h1>
-                    <div style="overflow-x:auto;">
-                        <table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>내용</th></tr></thead><tbody id="cList"></tbody></table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="sidebar">
+        <h2>FIT-FLUENCE 관리</h2>
+        <div class="menu-item active" onclick="showTab('design', this)">⚙️ 사이트/배너 설정</div>
+        <div class="menu-item" onclick="showTab('posts', this)">📝 게시글 관리</div>
+        <div class="menu-item" onclick="showTab('survey', this)">📋 설문 주제 생성</div>
+        <div class="menu-item" onclick="showTab('consult', this)">👤 상담 신청 명단</div>
+        <div style="margin-top:auto;"><a href="index.html" style="text-decoration:none; color:#999; font-weight:bold;">홈페이지 보기 →</a></div>
     </div>
 
-    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2><p>잠시만 기다려주세요. 창을 닫지 마세요.</p></div>
+    <div class="main">
+        <div id="design" class="tab active">
+            <div class="card">
+                <h1>⚙️ 통합 관리 및 배너 설정</h1>
+                <div class="form-group"><label>🔐 관리자 비번</label><input type="password" id="adminPw"></div>
+                <div class="form-group" style="background: #fff9e6; border: 1px solid #ffeeba;">
+                    <label>🛡️ 데이터 금고 (서버로 데이터 전송)</label>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn-sub" onclick="backupData()">💾 내보내기</button>
+                        <button class="btn-sub" style="background:#ffcc00; color:#000; font-size:1.1rem; padding:15px;" onclick="document.getElementById('importIn').click()">📂 [중요] 서버로 복구 (여기 클릭)</button>
+                        <input type="file" id="importIn" style="display:none" onchange="restoreData(this)" accept=".json">
+                    </div>
+                </div>
+                <div class="form-group"><label>🔗 유튜브 배너 링크</label><input type="text" id="bannerLink"></div>
+                <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
+                <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()"></div><input type="file" id="fIn" style="display:none" onchange="pick(this)" accept="image/*"></div>
+                <button class="btn" onclick="saveDesign()">모든 설정 저장하기</button>
+            </div>
+        </div>
+
+        <div id="posts" class="tab"><div class="card"><h1>📝 게시글 관리</h1><button class="btn" style="width:auto; padding:10px 30px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button><table><thead><tr><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table></div></div>
+
+        <div id="survey" class="tab">
+            <div class="card">
+                <h1>📋 설문 주제 생성</h1>
+                <div class="form-group">
+                    <label>주제</label><input type="text" id="newT" placeholder="예: 평소 식습관은 어떤가요?">
+                    <br><br>
+                    <label>옵션(콤마구분)</label><input type="text" id="newO" placeholder="예: 규칙적임, 불규칙함, 과식이 잦음">
+                    <button class="btn" id="addBtn" onclick="addTopic()">주제 추가하기</button>
+                </div>
+                <div id="topicList"></div>
+            </div>
+        </div>
+
+        <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><button onclick="downloadExcel()" style="background:#1D6F42; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-bottom:15px;">📊 엑셀 다운로드</button><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
+    </div>
+
+    <div id="statusOverlay"><h2 id="statusMsg">서버 처리 중...</h2><p>잠시만 기다려주세요.</p></div>
 
     <script>
         const firebaseConfig = {
@@ -124,188 +94,88 @@
         const storage = firebase.storage();
 
         if (sessionStorage.getItem('fit_auth') !== 'true') { location.href = 'index.html'; }
-        else { document.getElementById('adminBody').style.display = 'block'; }
-
-        function showStatus(msg) { 
-            const el = document.getElementById('statusOverlay');
-            el.style.display = 'flex';
-            document.getElementById('statusMsg').innerText = msg;
-        }
-        function hideStatus() { document.getElementById('statusOverlay').style.display = 'none'; }
+        else { document.getElementById('adminBody').style.display = 'flex'; }
 
         function showTab(id, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); 
-            if(el) el.classList.add('active');
+            document.getElementById(id).classList.add('active'); el.classList.add('active');
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // --- 1. Design & Hero Image (With Compression) ---
-        let pickedImgUrl = "";
-        
-        function resizeImg(file, maxW, quality) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let w = img.width, h = img.height;
-                        if(w > maxW) { h = h * (maxW/w); w = maxW; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
+        function showStatus(msg) { document.getElementById('statusOverlay').style.display = 'flex'; document.getElementById('statusMsg').innerText = msg; }
+        function hideStatus() { document.getElementById('statusOverlay').style.display = 'none'; }
 
-        window.pickHero = async function(input) {
-            if(!input.files[0]) return;
-            showStatus("이미지 최적화 및 업로드 중...");
-            try {
-                // 대폭 압축 (속도 향상)
-                const compressedData = await resizeImg(input.files[0], 1200, 0.6);
-                const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
-                const snap = await ref.putString(compressedData, 'data_url');
-                pickedImgUrl = await snap.ref.getDownloadURL();
-                document.getElementById('preview').innerHTML = `<img src="${pickedImgUrl}">`;
-                alert("배경 이미지 업로드 완료! '서버 저장' 버튼을 꼭 눌러주세요.");
-            } catch(err) { alert("업로드 실패: " + err.message); }
-            hideStatus();
+        let imgData = "";
+        async function pick(i) {
+            if(i.files[0]) {
+                showStatus("이미지 업로드 중...");
+                const reader = new FileReader();
+                reader.onload = async e => {
+                    const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
+                    const snap = await ref.putString(e.target.result, 'data_url');
+                    imgData = await snap.ref.getDownloadURL();
+                    document.getElementById('preview').innerHTML = `<img src="${imgData}">`;
+                    hideStatus();
+                };
+                reader.readAsDataURL(i.files[0]);
+            }
         }
 
         async function saveDesign() {
-            showStatus("사이트 설정 서버 저장 중...");
-            const currentImg = document.querySelector('#preview img')?.src || "";
+            showStatus("저장 중...");
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
                 bannerLink: document.getElementById('bannerLink').value,
                 logo: document.getElementById('siteLogo').value,
-                img: pickedImgUrl || currentImg
+                img: imgData || (document.querySelector('#preview img')?.src) || ""
             };
-            try {
-                await db.collection('config').doc('site').set(cfg);
-                localStorage.setItem('fitConfig', JSON.stringify(cfg));
-                alert('서버와 완벽하게 동기화되었습니다!');
-            } catch(e) { alert("저장 실패: " + e.message); }
-            hideStatus();
+            await db.collection('config').doc('site').set(cfg);
+            localStorage.setItem('fitConfig', JSON.stringify(cfg));
+            hideStatus(); alert('완료!');
         }
 
-        // --- 2. Posts ---
-        let globalPosts = [];
         async function loadP() {
-            try {
-                const snap = await db.collection('posts').get();
-                globalPosts = [];
-                snap.forEach(doc => { var d = doc.data(); d.id = doc.id; globalPosts.push(d); });
-                globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
-                
-                // Merge with local if cloud is empty
-                if(globalPosts.length === 0) {
-                    globalPosts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-                }
-                renderPostTable();
-            } catch(e) { console.error(e); }
+            const snap = await db.collection('posts').get();
+            let ps = []; snap.forEach(d => { var data = d.data(); data.id = d.id; ps.push(data); });
+            ps.sort((a,b) => b.id > a.id ? 1 : -1);
+            document.getElementById('pTable').innerHTML = ps.map(p => `<tr><td>${p.category}</td><td><b>${p.title}</b></td><td><button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;font-weight:bold;margin-right:10px;">수정</button><button onclick="delP('${p.id}')" style="color:red;border:none;background:none;">삭제</button></td></tr>`).join('');
         }
 
-        function renderPostTable() {
-            document.getElementById('pTable').innerHTML = globalPosts.map((p, i) => `
-                <tr>
-                    <td>
-                        <button class="order-btn" onclick="movePost(${i}, -1)">▲</button><br>
-                        <button class="order-btn" onclick="movePost(${i}, 1)">▼</button>
-                    </td>
-                    <td>${p.category}</td>
-                    <td><b>${p.title}</b></td>
-                    <td>
-                        <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;font-weight:bold;">수정</button><br>
-                        <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;font-weight:bold;">삭제</button>
-                    </td>
-                </tr>`).join('');
-        }
+        async function delP(id) { if(confirm('삭제?')) { await db.collection('posts').doc(id).delete(); loadP(); } }
 
-        async function movePost(index, direction) {
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= globalPosts.length) return;
-            const temp = globalPosts[index];
-            globalPosts[index] = globalPosts[newIndex];
-            globalPosts[newIndex] = temp;
-            renderPostTable();
-            for(let i=0; i < globalPosts.length; i++) {
-                if(globalPosts[i].id && globalPosts[i].id.length > 5) {
-                    await db.collection('posts').doc(globalPosts[i].id).update({ sortIndex: i });
-                }
-            }
-        }
-
-        async function delP(id) {
-            if(confirm('정말 삭제할까요?')) {
-                try { await db.collection('posts').doc(id).delete(); } catch(e) {}
-                globalPosts = globalPosts.filter(p => String(p.id) !== String(id));
-                localStorage.setItem('fitPosts', JSON.stringify(globalPosts));
-                loadP();
-            }
-        }
-
-        // --- 3. Survey ---
         let editIdx = null;
         async function addTopic() {
             const t = document.getElementById('newT').value; const o = document.getElementById('newO').value;
             if(!t || !o) return alert('내용 입력!');
             const doc = await db.collection('config').doc('surveyMaster').get();
             let s = doc.exists ? doc.data().items : [];
-            if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; document.getElementById('addBtn').innerText = "주제 추가"; } 
-            else { s.push({t, o}); }
+            if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; } else { s.push({t, o}); }
             await db.collection('config').doc('surveyMaster').set({ items: s });
-            localStorage.setItem('fitSurveyMaster', JSON.stringify(s));
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             renderTopics();
         }
 
         async function renderTopics() {
             const doc = await db.collection('config').doc('surveyMaster').get();
-            let s = doc.exists ? doc.data().items : JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-            document.getElementById('topicList').innerHTML = s.map((t, i) => `
-                <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="max-width:70%;"><b>${i+1}. ${t.t || t.q}</b><br><small>${t.o}</small></div>
-                    <div><button onclick="editT(${i})" style="color:blue;border:none;background:none;font-weight:bold;margin-right:10px;">수정</button>
-                    <button onclick="delT(${i})" style="color:red;border:none;background:none;font-weight:bold;">삭제</button></div>
-                </div>`).join('');
+            let s = doc.exists ? doc.data().items : [];
+            document.getElementById('topicList').innerHTML = s.map((t, i) => `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><div><b>${i+1}. ${t.t || t.q}</b><br><small>${t.o}</small></div><div><button onclick="editT(${i})" style="color:blue;border:none;background:none;font-weight:bold;margin-right:10px;">수정</button><button onclick="delT(${i})" style="color:red;border:none;background:none;">삭제</button></div></div>`).join('');
         }
 
         function editT(i) {
             db.collection('config').doc('surveyMaster').get().then(doc => {
                 const s = doc.data().items;
-                document.getElementById('newT').value = s[i].t || s[i].q;
-                document.getElementById('newO').value = s[i].o;
+                document.getElementById('newT').value = s[i].t || s[i].q; document.getElementById('newO').value = s[i].o;
                 editIdx = i; document.getElementById('addBtn').innerText = "수정 완료";
             });
         }
 
-        async function delT(i) {
-            if(confirm('삭제?')) {
-                const doc = await db.collection('config').doc('surveyMaster').get();
-                let s = doc.data().items; s.splice(i, 1);
-                await db.collection('config').doc('surveyMaster').set({ items: s });
-                renderTopics();
-            }
-        }
+        async function delT(i) { if(confirm('삭제?')) { const doc = await db.collection('config').doc('surveyMaster').get(); let s = doc.data().items; s.splice(i, 1); await db.collection('config').doc('surveyMaster').set({ items: s }); renderTopics(); } }
 
-        // --- 4. Consults ---
         async function loadC() {
-            try {
-                const snap = await db.collection('consults').orderBy('createdAt','desc').get();
-                let html = "";
-                snap.forEach(doc => {
-                    const c = doc.data();
-                    html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleDateString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`;
-                });
-                document.getElementById('cList').innerHTML = html || "<tr><td colspan='4' style='text-align:center;'>내역 없음</td></tr>";
-            } catch(e) { console.warn(e); }
+            const snap = await db.collection('consults').orderBy('createdAt','desc').get();
+            let html = ""; snap.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`; });
+            document.getElementById('cList').innerHTML = html;
         }
 
         async function restoreData(input) {
@@ -313,27 +183,20 @@
             const reader = new FileReader();
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
-                if(confirm('서버의 모든 데이터를 이 파일로 교체할까요? (시간이 걸릴 수 있습니다)')) {
-                    showStatus("데이터 서버 복구 중...");
+                if(confirm('서버 복구를 시작할까요?')) {
+                    showStatus("데이터 전송 중...");
                     try {
-                        if(data.config) {
-                            const cfg = JSON.parse(data.config);
-                            await db.collection('config').doc('site').set(cfg);
-                        }
-                        if(data.survey) {
-                            const s = JSON.parse(data.survey);
-                            await db.collection('config').doc('surveyMaster').set({ items: s });
-                        }
+                        if(data.config) await db.collection('config').doc('site').set(JSON.parse(data.config));
+                        if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
                         if(data.posts) {
                             const ps = JSON.parse(data.posts);
                             for(let i=0; i<ps.length; i++) {
-                                showStatus(`게시글 복구 중... (${i+1}/${ps.length})`);
+                                showStatus(`게시글 전송 중 (${i+1}/${ps.length})`);
                                 await db.collection('posts').doc(String(ps[i].id)).set({ ...ps[i], sortIndex: i });
                             }
                         }
-                        alert('전체 서버 복구가 완료되었습니다!');
-                        location.reload();
-                    } catch(err) { alert("복구 실패: " + err.message); }
+                        alert('서버 복구 완료!'); location.reload();
+                    } catch(err) { alert(err.message); }
                     hideStatus();
                 }
             };
@@ -341,18 +204,13 @@
         }
 
         window.onload = async function() {
-            try {
-                const doc = await db.collection('config').doc('site').get();
-                const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
-                document.getElementById('adminPw').value = cfg.pw;
-                document.getElementById('bannerLink').value = cfg.bannerLink || "";
-                document.getElementById('siteLogo').value = cfg.logo || "";
-                if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
-                loadP();
-            } catch(e) { 
-                document.getElementById('adminBody').style.display = 'block'; 
-                loadP();
-            }
+            const doc = await db.collection('config').doc('site').get();
+            const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
+            document.getElementById('adminPw').value = cfg.pw;
+            document.getElementById('bannerLink').value = cfg.bannerLink || "";
+            document.getElementById('siteLogo').value = cfg.logo || "";
+            if(cfg.img) document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`;
+            loadP();
         }
     </script>
 </body>

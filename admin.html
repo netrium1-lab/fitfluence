@@ -26,6 +26,8 @@
         th, td { padding: 18px; border-bottom: 1px solid #eee; text-align: left; }
         #preview { width: 100%; height: 200px; background: #eee; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
+        .order-btn { padding: 5px 10px; background: #eee; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; margin-right: 5px; font-size: 0.8rem; }
+        .order-btn:hover { background: var(--gold); color: #fff; }
     </style>
 </head>
 <body id="adminBody" style="display:none;">
@@ -50,7 +52,6 @@
                         <button class="btn-sub" style="background:#ffcc00; color:#000; font-size:1.1rem; padding:15px;" onclick="document.getElementById('importIn').click()">📂 [중요] 서버로 복구 (여기 클릭)</button>
                         <input type="file" id="importIn" style="display:none" onchange="restoreData(this)" accept=".json">
                     </div>
-                    <small style="display:block; margin-top:10px; color:#888;">* 백업 JSON 파일을 올리면 휴대폰 등 모든 기기에 동기화됩니다.</small>
                 </div>
                 <div class="form-group"><label>🔗 유튜브 배너 링크</label><input type="text" id="bannerLink"></div>
                 <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
@@ -59,7 +60,14 @@
             </div>
         </div>
 
-        <div id="posts" class="tab"><div class="card"><h1>📝 게시글 관리</h1><button class="btn" style="width:auto; padding:10px 30px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button><table><thead><tr><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table></div></div>
+        <div id="posts" class="tab">
+            <div class="card">
+                <h1>📝 게시글 관리</h1>
+                <p style="color:#888; margin-bottom:20px;">* 순서 변경 후 [저장]하지 않아도 즉시 서버에 반영됩니다.</p>
+                <button class="btn" style="width:auto; padding:10px 30px; margin-bottom:20px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
+                <table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table>
+            </div>
+        </div>
 
         <div id="survey" class="tab">
             <div class="card">
@@ -130,24 +138,68 @@
             alert('서버 저장 완료!');
         }
 
+        // --- 게시글 관리 (순서 변경 포함) ---
+        let globalPosts = [];
         async function loadP() {
-            let allPs = [];
             const snap = await db.collection('posts').get();
-            snap.forEach(doc => { var d = doc.data(); d.id = doc.id; allPs.push(d); });
-            allPs.sort((a,b) => b.id > a.id ? 1 : -1);
-            document.getElementById('pTable').innerHTML = allPs.map(p => `
-                <tr><td>${p.category}</td><td><b>${p.title}</b></td>
-                <td><button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;cursor:pointer;margin-right:10px;font-weight:bold;">수정</button>
-                <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;cursor:pointer;font-weight:bold;">삭제</button></td></tr>`).join('');
+            globalPosts = [];
+            snap.forEach(doc => { var d = doc.data(); d.id = doc.id; globalPosts.push(d); });
+            
+            // sortIndex가 있는 경우 우선 정렬, 없으면 ID순
+            globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
+
+            const localPs = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+            localPs.forEach(lp => { if(!globalPosts.find(cp => String(cp.id) === String(lp.id))) globalPosts.push(lp); });
+
+            renderPostTable();
+        }
+
+        function renderPostTable() {
+            document.getElementById('pTable').innerHTML = globalPosts.map((p, i) => `
+                <tr>
+                    <td>
+                        <button class="order-btn" onclick="movePost(${i}, -1)">▲</button>
+                        <button class="order-btn" onclick="movePost(${i}, 1)">▼</button>
+                    </td>
+                    <td>${p.category}</td>
+                    <td><b>${p.title}</b></td>
+                    <td>
+                        <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;cursor:pointer;margin-right:10px;font-weight:bold;">수정</button>
+                        <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;cursor:pointer;font-weight:bold;">삭제</button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        async function movePost(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= globalPosts.length) return;
+
+            // 위치 바꾸기
+            const temp = globalPosts[index];
+            globalPosts[index] = globalPosts[newIndex];
+            globalPosts[newIndex] = temp;
+
+            renderPostTable();
+
+            // 서버에 순서(sortIndex) 업데이트
+            for(let i=0; i < globalPosts.length; i++) {
+                const pid = globalPosts[i].id;
+                if(pid && pid.length > 5) { // 서버 데이터만 인덱스 업데이트
+                    await db.collection('posts').doc(pid).update({ sortIndex: i });
+                }
+            }
         }
 
         async function delP(id) {
             if(confirm('삭제?')) {
-                await db.collection('posts').doc(id).delete();
+                try { await db.collection('posts').doc(id).delete(); } catch(e) {}
+                globalPosts = globalPosts.filter(p => String(p.id) !== String(id));
+                localStorage.setItem('fitPosts', JSON.stringify(globalPosts));
                 loadP();
             }
         }
 
+        // --- 기타 로직 ---
         let editIdx = null;
         async function addTopic() {
             const t = document.getElementById('newT').value; const o = document.getElementById('newO').value;
@@ -180,7 +232,7 @@
         }
 
         async function delT(i) {
-            if(confirm('삭제?')) {
+            if(confirm('삭제할까요?')) {
                 let s = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
                 s.splice(i, 1);
                 await db.collection('config').doc('surveyMaster').set({ items: s });
@@ -205,55 +257,25 @@
             const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `FIT_BACKUP.json`; l.click();
         }
 
-        // [중요] 서버 데이터 복구 로직 강화
         function restoreData(input) {
             if(!input.files[0]) return;
             const reader = new FileReader();
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
-                if(confirm('이 파일을 서버(클라우드)로 업로드하여 전체 복구할까요?')) {
-                    const statusOverlay = document.createElement('div');
-                    statusOverlay.id = 'statusOverlay';
-                    statusOverlay.innerHTML = `<div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999;">
-                        <h2 id="statusMsg">서버 전송 준비 중...</h2>
-                        <p>창을 닫지 마세요.</p>
-                    </div>`;
-                    document.body.appendChild(statusOverlay);
-                    
-                    // 1. Config Restore
-                    if(data.config) {
-                        const cfg = JSON.parse(data.config);
-                        await db.collection('config').doc('site').set(cfg);
-                        localStorage.setItem('fitConfig', data.config);
-                    }
-                    // 2. Survey Restore
-                    if(data.survey) {
-                        const s = JSON.parse(data.survey);
-                        await db.collection('config').doc('surveyMaster').set({ items: s });
-                        localStorage.setItem('fitSurveyMaster', data.survey);
-                    }
-                    // 3. Posts Restore
+                if(confirm('서버로 전체 복구할까요?')) {
+                    if(data.config) await db.collection('config').doc('site').set(JSON.parse(data.config));
+                    if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
                     if(data.posts) {
                         const ps = JSON.parse(data.posts);
-                        const total = ps.length;
-                        for(let i=0; i < total; i++) {
-                            const p = ps[i];
-                            document.getElementById('statusMsg').innerText = `게시글 전송 중... (${i+1} / ${total})`;
-                            await db.collection('posts').doc(String(p.id)).set({
-                                title: p.title, category: p.category, content: p.content, image: p.image || "", date: p.date, 
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
+                        for(let i=0; i<ps.length; i++) {
+                            await db.collection('posts').doc(String(ps[i].id)).set({ ...ps[i], sortIndex: i });
                         }
-                        localStorage.setItem('fitPosts', data.posts);
                     }
-                    alert('서버 복구가 완벽히 완료되었습니다!');
-                    location.reload();
+                    alert('완료!'); location.reload();
                 }
             };
             reader.readAsText(input.files[0]);
         }
-
-        function downloadExcel() { /* ... */ }
 
         window.onload = async function() {
             const doc = await db.collection('config').doc('site').get();

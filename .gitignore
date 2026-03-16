@@ -1,0 +1,16 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# IDE
+.idx/
+.vscode/
+
+# Project specifics
+.DS_Store

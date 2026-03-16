@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>FIT-FLUENCE PREMIUM EDITOR</title>
+    <style>
+        :root { --gold: #D4AF37; --bg: #050505; --card: #121212; }
+        body { font-family: sans-serif; background: var(--bg); color: #fff; padding: 40px; margin: 0; }
+        .container { max-width: 1000px; margin: 0 auto; background: var(--card); border: 1px solid #333; border-radius: 40px; padding: 50px; }
+        h1 { color: var(--gold); text-align: center; margin-bottom: 40px; font-weight: 900; }
+        
+        input, select { width: 100%; padding: 20px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 15px; font-size: 1.1rem; outline: none; }
+        input:focus { border-color: var(--gold); }
+        
+        .toolbar { background: #1a1a1a; padding: 15px; border-radius: 15px 15px 0 0; border: 1px solid #333; border-bottom: none; display: flex; gap: 12px; align-items: center; }
+        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .tool-btn:hover { background: var(--gold); color: #000; }
+        
+        /* [핵심] 블랙 편집창 */
+        #editor { min-height: 600px; background: #000; color: #eee; padding: 40px; border-radius: 0 0 15px 15px; border: 1px solid #333; font-size: 1.25rem; line-height: 2.2; outline: none; overflow-y: auto; }
+        #editor img { max-width: 100%; border-radius: 15px; display: block; margin: 30px auto; }
+        
+        .publish-btn { background: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); color: #000; border: none; padding: 25px; width: 100%; border-radius: 100px; font-weight: 900; font-size: 1.5rem; cursor: pointer; margin-top: 40px; transition: 0.3s; }
+        .publish-btn:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="pageTitle">🖋️ 프리미엄 블랙 에디터</h1>
+        <input type="text" id="pTitle" placeholder="제목을 입력하세요">
+        <select id="pCate">
+            <option value="건강재테크">건강재테크</option>
+            <option value="핏솔루션">핏솔루션</option>
+            <option value="맞춤건강안내">맞춤건강안내</option>
+            <option value="커뮤니티">커뮤니티</option>
+        </select>
+        
+        <div class="toolbar">
+            <button class="tool-btn" onclick="cmd('bold')">B (굵게)</button>
+            <button class="tool-btn" onclick="cmd('underline')">U (밑줄)</button>
+            <button class="tool-btn" onclick="cmd('foreColor', prompt('색상 코드(#gold, red 등):'))">🎨 색상</button>
+            <button class="tool-btn" onclick="document.getElementById('imgIn').click()" style="background:var(--gold); color:#000;">📷 사진 추가</button>
+            <input type="file" id="imgIn" style="display:none" onchange="insertImg(this)" accept="image/*">
+        </div>
+        
+        <div id="editor" contenteditable="true" placeholder="이곳에 티스토리처럼 내용을 작성하고 꾸며보세요..."></div>
+        
+        <button class="publish-btn" onclick="save()" id="saveBtn">홈페이지 본부에 발행하기</button>
+        <button onclick="location.href='admin.html'" style="background:none; border:none; color:#666; width:100%; margin-top:25px; cursor:pointer; font-weight:bold;">← 취소하고 관리자로 돌아가기</button>
+    </div>
+
+    <script type="module">
+        import * as firebase from './firebase-logic.js';
+
+        const params = new URLSearchParams(location.search);
+        const editId = params.get('id');
+
+        // [NEW] Auth Check
+        firebase.onAuth((user) => {
+            if (!user) {
+                alert('로그인이 필요합니다.');
+                location.href = 'admin.html';
+            }
+        });
+
+        window.cmd = function(c, v) { document.execCommand(c, false, v); document.getElementById('editor').focus(); }
+        
+        window.insertImg = function(input) {
+            const file = input.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 1000; const scale = MAX / img.width;
+                    canvas.width = MAX; canvas.height = img.height * scale;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    document.getElementById('editor').focus();
+                    document.execCommand('insertHTML', false, `<img src="${canvas.toDataURL('image/jpeg', 0.7)}"><br>`);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.save = async function() {
+            const title = document.getElementById('pTitle').value;
+            const category = document.getElementById('pCate').value;
+            const contentEl = document.getElementById('editor');
+            const content = contentEl.innerHTML;
+            if(!title || !content || content === "<br>") return alert('제목과 내용을 입력하세요.');
+
+            // [NEW] Image handling: find base64 images and upload them to Storage
+            const imgs = contentEl.querySelectorAll('img');
+            for(let i=0; i<imgs.length; i++) {
+                if(imgs[i].src.startsWith('data:')) {
+                    const path = `posts/${Date.now()}_${i}.jpg`;
+                    try {
+                        const url = await firebase.uploadImage(path, imgs[i].src);
+                        imgs[i].src = url;
+                    } catch (e) {
+                        console.warn('Image upload failed, keeping base64:', e);
+                    }
+                }
+            }
+
+            const updatedContent = contentEl.innerHTML;
+            const firstImg = contentEl.querySelector('img')?.src || "";
+            const postData = {
+                title, 
+                category, 
+                content: updatedContent, 
+                date: new Date().toLocaleDateString(),
+                image: firstImg
+            };
+
+            try {
+                await firebase.savePost(editId, postData);
+            } catch (e) {
+                console.warn('Saving to localStorage:', e);
+                let ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                if(editId) {
+                    const idx = ps.findIndex(x => String(x.id) === String(editId));
+                    if(idx !== -1) ps[idx] = { ...postData, id: editId };
+                } else {
+                    ps.push({ ...postData, id: Date.now().toString() });
+                }
+                localStorage.setItem('fitPosts', JSON.stringify(ps));
+            }
+            
+            alert('성공적으로 발행되었습니다!');
+            location.href = 'admin.html';
+        }
+
+        window.onload = async function() {
+            if(editId) {
+                let p = null;
+                try {
+                    p = await firebase.getPost(editId);
+                } catch (e) {
+                    const ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                    p = ps.find(x => String(x.id) === String(editId));
+                }
+                
+                if(p) {
+                    document.getElementById('pTitle').value = p.title;
+                    document.getElementById('pCate').value = p.category;
+                    document.getElementById('editor').innerHTML = p.content;
+                    document.getElementById('pageTitle').innerText = "✏️ 게시글 수정하기";
+                    document.getElementById('saveBtn').innerText = "수정 완료 (홈페이지 반영)";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

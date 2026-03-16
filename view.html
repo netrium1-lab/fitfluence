@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>상세보기 - FIT-FLUENCE</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.8; color: #333; padding: 50px; background: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .post-img { width: 100%; border-radius: 20px; margin-bottom: 30px; }
+        .btn-list { display: inline-block; margin-top: 50px; padding: 15px 40px; background: #D4AF37; color: #fff; text-decoration: none; border-radius: 50px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container" id="viewArea"></div>
+    <script type="module">
+        import * as firebase from './firebase-logic.js';
+
+        window.onload = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            
+            let post = null;
+            try {
+                post = await firebase.getPost(id);
+            } catch (e) {
+                console.warn('Falling back to localStorage:', e);
+                const posts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                post = posts.find(p => String(p.id) === String(id));
+            }
+
+            if(!post) {
+                alert('게시물을 찾을 수 없습니다.');
+                location.href='index.html';
+                return;
+            }
+
+            document.getElementById('viewArea').innerHTML = `
+                <h1 style="font-size:2.5rem; margin-bottom:10px;">${post.title}</h1>
+                <p style="color:#aaa; border-bottom:1px solid #eee; padding-bottom:20px; margin-bottom:30px;">
+                    카테고리: ${post.category} | 작성일: ${post.date || new Date(post.createdAt?.seconds * 1000).toLocaleDateString()}
+                </p>
+                ${post.image ? `<img src="${post.image}" class="post-img">` : ''}
+                <div style="font-size:1.2rem; white-space:pre-wrap;">${post.content}</div>
+                <a href="index.html" class="btn-list">목록으로 돌아가기</a>
+            `;
+        }
+    </script>
+</body>
+</html>

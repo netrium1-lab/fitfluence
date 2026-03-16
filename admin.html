@@ -35,23 +35,9 @@
         
         #preview { width: 100%; height: 200px; background: #000; border: 1px solid #333; border-radius: 20px; overflow: hidden; margin-bottom: 20px; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
-
-        #loginModal { display: flex; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 10000; align-items:center; justify-content:center; }
-        .login-box { background:#111; padding:50px; border-radius:30px; border:1px solid #333; width:400px; text-align:center; }
     </style>
 </head>
 <body>
-    <!-- [로그인 모달] -->
-    <div id="loginModal">
-        <div class="login-box">
-            <h2 style="color:var(--gold); margin-bottom:30px;">관리자 로그인</h2>
-            <input type="email" id="loginEmail" placeholder="이메일">
-            <input type="password" id="loginPass" placeholder="비밀번호">
-            <button onclick="handleLogin()" class="btn-gold" style="width:100%;">로그인</button>
-            <p id="loginError" style="color:red; margin-top:20px; font-size:0.9rem;"></p>
-        </div>
-    </div>
-
     <!-- [사이드바] -->
     <div id="sidebar" class="sidebar">
         <h2>FIT-FLUENCE 관리</h2>
@@ -125,7 +111,6 @@
     <script type="module">
         import * as firebase from './firebase-logic.js';
 
-        console.log("Admin module loaded");
         let heroImgData = "";
 
         // [Global Functions]
@@ -194,7 +179,6 @@
 
         const renderAll = async () => {
             console.log("Rendering all...");
-            // 1. Posts
             let ps = []; try { ps = await firebase.getPosts(); } catch(e) {}
             document.getElementById('pList').innerHTML = ps.map(p => `
                 <tr><td><b>${p.title}</b></td><td>
@@ -202,7 +186,6 @@
                     <button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delP('${p.id}')">삭제</button>
                 </td></tr>`).join('');
             
-            // 2. Survey
             let ss = []; try { ss = await firebase.getSurveyMasterItems(); } catch(e) {}
             document.getElementById('sList').innerHTML = ss.map((s, i) => `
                 <div style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
@@ -210,7 +193,6 @@
                     <div><button class="btn-gold btn-sm" onclick="editS(${i})">수정</button><button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delS(${i})">삭제</button></div>
                 </div>`).join('');
 
-            // 3. Consults
             let cs = []; try { cs = await firebase.getConsults(); } catch(e) {}
             document.getElementById('consultList').innerHTML = cs.map((c, i) => `
                 <tr><td>${c.date}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td><button class="btn-gold btn-sm" onclick="showDetail(${i})">보기</button></td></tr>`).join('');
@@ -225,14 +207,7 @@
             document.getElementById('detailModal').style.display = 'flex';
         };
 
-        window.handleLogin = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            console.log("Login attempt:", email);
-            try { await firebase.login(email, pass); } catch(e) { document.getElementById('loginError').innerText = "실패: " + e.message; }
-        };
-
-        window.handleLogout = async () => { if(confirm('로그아웃?')) { await firebase.logout(); location.reload(); } };
+        window.handleLogout = () => { if(confirm('로그아웃?')) { sessionStorage.removeItem('fit_auth'); location.reload(); } };
 
         window.backup = () => {
             const a = document.createElement('a');
@@ -266,29 +241,29 @@
             } 
         };
 
-        firebase.onAuth((user) => {
-            console.log("Auth state change:", user ? "User" : "None");
-            if (!user) {
-                document.getElementById('loginModal').style.display = 'flex';
-                document.getElementById('sidebar').style.display = 'none';
-                document.getElementById('main').style.display = 'none';
-            } else {
-                document.getElementById('loginModal').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('main').style.display = 'block';
-                (async () => {
-                    let cfg = {}; try { cfg = await firebase.getConfig() || {}; } catch(e){}
-                    document.getElementById('siteLogo').value = cfg.logo || "";
-                    document.getElementById('bannerLink').value = cfg.bannerLink || "";
-                    if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
-                    renderAll();
-                })();
+        // [핵심] 7777 비밀번호 체크
+        window.onload = async () => {
+            if (sessionStorage.getItem('fit_auth') !== 'true') {
+                const code = prompt('보안 코드를 입력하세요 (비밀번호 4자리)');
+                if (code === "7777") {
+                    sessionStorage.setItem('fit_auth', 'true');
+                } else {
+                    alert('코드가 일치하지 않습니다.');
+                    location.href = 'index.html';
+                    return;
+                }
             }
-        });
+            
+            // 인증 통과 시 화면 표시
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main').style.display = 'block';
 
-        // Global export to window for delP, delS etc
-        window.delP = window.delP; window.delS = window.delS;
-        window.editS = window.editS; window.showDetail = window.showDetail;
+            let cfg = {}; try { cfg = await firebase.getConfig() || {}; } catch(e){}
+            document.getElementById('siteLogo').value = cfg.logo || "";
+            document.getElementById('bannerLink').value = cfg.bannerLink || "";
+            if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
+            renderAll();
+        };
     </script>
 </body>
 </html>

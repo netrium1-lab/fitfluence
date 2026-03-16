@@ -150,7 +150,10 @@
                 <tr>
                     <td>${p.category}</td>
                     <td><b>${p.title}</b></td>
-                    <td><button onclick="delP('${p.id}')" style="color:red;border:none;background:none;cursor:pointer;">삭제</button></td>
+                    <td>
+                        <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;cursor:pointer;margin-right:10px;font-weight:bold;">수정</button>
+                        <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;cursor:pointer;font-weight:bold;">삭제</button>
+                    </td>
                 </tr>`).join('');
         }
 

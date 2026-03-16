@@ -71,7 +71,7 @@
 
     <section class="hero-banners">
         <div class="container cta-wrap">
-            <button class="main-cta" onclick="openSurvey()">건강 자가진단 신청</button>
+            <button class="main-cta" onclick="openSurvey()">혈액검사분석신청</button>
             <button class="sub-cta" onclick="scrollToCommunity()">프로모션 이벤트</button>
         </div>
     </section>
@@ -146,7 +146,7 @@
             if(master.length === 0) master = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
 
             const container = document.getElementById('dynamicSurvey');
-            container.innerHTML = `<h2 style="color:var(--gold); margin-bottom:30px; text-align:center;">📊 라이프 자가진단</h2>`;
+            container.innerHTML = `<h2 style="color:var(--gold); margin-bottom:30px; text-align:center;">📊 혈액검사 분석 신청</h2>`;
             master.forEach(topic => {
                 let html = `<div class="survey-group" style="margin-bottom:20px;"><b style="display:block; margin-bottom:10px; color:#ccc;">${topic.t || topic.q}</b>`;
                 (topic.o || "").split(',').forEach(opt => { 

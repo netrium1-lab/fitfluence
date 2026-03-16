@@ -8,7 +8,10 @@
         :root { --gold: #D4AF37; --gold-grad: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); --bg: #0a0a0a; --card: #151515; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #fff; overflow: hidden; }
         
-        /* [핵심] 기본적으로 모든 요소를 숨김 (나중에 JS로 보임 처리) */
+        /* [핵심] 로그인 섹션 */
+        #authSection { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .login-card { background: #111; padding: 60px; border-radius: 40px; border: 1px solid #333; width: 400px; text-align: center; box-shadow: 0 0 50px rgba(212, 175, 55, 0.1); }
+        
         .sidebar { width: 300px; background: #000; border-right: 1px solid #222; padding: 40px 30px; flex-shrink: 0; display: none; flex-direction: column; }
         .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.6rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
         .menu-item { padding: 18px 25px; cursor: pointer; border-radius: 15px; margin-bottom: 12px; color: #fff; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
@@ -20,12 +23,11 @@
         
         h1 { color: #fff; font-weight: 900; margin-bottom: 30px; font-size: 1.8rem; }
         label { display: block; margin-bottom: 12px; font-weight: 800; color: var(--gold); }
-        input, select, textarea { width: 100%; padding: 18px; background: #000; border: 1px solid #333; color: #fff; border-radius: 15px; margin-bottom: 20px; font-size: 1rem; }
+        input { width: 100%; padding: 18px; background: #000; border: 1px solid #333; color: #fff; border-radius: 15px; margin-bottom: 20px; font-size: 1rem; text-align: center; }
         
-        .btn-gold { background: var(--gold-grad); color: #000; border: none; padding: 15px 35px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .btn-gold { background: var(--gold-grad); color: #000; border: none; padding: 18px 35px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.3s; width: 100%; }
         .btn-gold:hover { transform: scale(1.02); }
-        .btn-sm { padding: 8px 15px; font-size: 0.85rem; margin-left: 5px; font-weight: bold; }
-        .btn-excel { background: #1D6F42; color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+        .btn-sm { padding: 8px 15px; font-size: 0.85rem; margin-left: 5px; font-weight: bold; width: auto; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a1a1a; color: var(--gold); padding: 18px; text-align: left; border-bottom: 2px solid #333; }
@@ -39,6 +41,17 @@
     </style>
 </head>
 <body>
+    <!-- [NEW] 로그인 화면 -->
+    <div id="authSection">
+        <div class="login-card">
+            <h2 style="color:var(--gold); margin-bottom:30px; font-weight:900;">FIT-FLUENCE<br><span style="font-size:1rem; color:#888;">ADMIN CENTER</span></h2>
+            <input type="password" id="passInput" placeholder="보안 코드 4자리" maxlength="4" onkeydown="if(event.key==='Enter') checkPass()">
+            <button class="btn-gold" onclick="checkPass()">시스템 접속</button>
+            <p id="errorMsg" style="color:red; margin-top:20px; font-size:0.9rem; display:none;">비밀번호가 올바르지 않습니다.</p>
+        </div>
+    </div>
+
+    <!-- [사이드바] -->
     <div id="sidebar" class="sidebar">
         <h2>FIT-FLUENCE 관리</h2>
         <div class="menu-item active" onclick="showTab('tab-design', this)">⚙️ 사이트 설정</div>
@@ -48,45 +61,44 @@
         <div class="menu-item" style="margin-top:auto; color:#888;" onclick="handleLogout()">🚪 로그아웃</div>
     </div>
 
+    <!-- [메인 영역] -->
     <div id="main" class="main">
         <div id="tab-design" class="tab active">
             <div class="card" style="background:#1a1500; border-color:var(--gold);">
                 <h3 style="color:var(--gold); margin-bottom:20px;">🛡️ 데이터 금고</h3>
-                <button class="btn-gold" onclick="backup()">💾 백업하기</button>
-                <button class="btn-gold" style="background:#444; color:#fff;" onclick="document.getElementById('reFile').click()">📂 복구하기</button>
+                <button class="btn-gold" style="width:auto;" onclick="backup()">💾 백업하기</button>
+                <button class="btn-gold" style="background:#444; color:#fff; width:auto;" onclick="document.getElementById('reFile').click()">📂 복구하기</button>
                 <input type="file" id="reFile" style="display:none" onchange="restore(this)">
             </div>
             <div class="card">
                 <h1>⚙️ 사이트 기본 설정</h1>
-                <label>로고 이름</label><input type="text" id="siteLogo">
-                <label>🔗 배너 링크</label><input type="text" id="bannerLink">
+                <label>로고 이름</label><input type="text" id="siteLogo" style="text-align:left;">
+                <label>🔗 배너 링크</label><input type="text" id="bannerLink" style="text-align:left;">
                 <label>🖼️ 메인 배경</label>
                 <div id="preview"></div>
-                <input type="file" onchange="pickHero(this)" accept="image/*">
+                <input type="file" onchange="pickHero(this)" accept="image/*" style="text-align:left;">
                 <button class="btn-gold" onclick="saveDesign()">설정 저장</button>
             </div>
         </div>
-
+        <!-- ... (나머지 탭 코드는 동일하므로 생략하지 않고 모두 포함하여 다시 씁니다) ... -->
         <div id="tab-posts" class="tab">
             <div class="card">
                 <h1>📝 게시글 관리</h1>
-                <button class="btn-gold" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
+                <button class="btn-gold" style="width:auto;" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
                 <table><thead><tr><th>제목</th><th>관리</th></tr></thead><tbody id="pList"></tbody></table>
             </div>
         </div>
-
         <div id="tab-survey" class="tab">
             <div class="card">
                 <h1 id="sHeader">📊 설문 항목 관리</h1>
                 <input type="hidden" id="editSurveyIdx">
-                <label>질문</label><input type="text" id="newT">
-                <label>옵션 (콤마 구분)</label><input type="text" id="newO">
+                <label>질문</label><input type="text" id="newT" style="text-align:left;">
+                <label>옵션 (콤마 구분)</label><input type="text" id="newO" style="text-align:left;">
                 <button class="btn-gold" id="sSaveBtn" onclick="saveSurvey()">저장/추가</button>
                 <button class="btn-gold" style="background:#444; color:#fff; display:none;" id="sCancelBtn" onclick="resetSurveyForm()">취소</button>
                 <div id="sList" style="margin-top:40px;"></div>
             </div>
         </div>
-
         <div id="tab-consult" class="tab">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -102,7 +114,7 @@
         <div class="modal-inner">
             <h2 style="color:var(--gold); margin-bottom:30px;">📋 상세 내역</h2>
             <div id="detailContent" style="line-height:2.2; font-size:1.1rem;"></div>
-            <button onclick="document.getElementById('detailModal').style.display='none'" class="btn-gold" style="width:100%; margin-top:30px;">확인</button>
+            <button onclick="document.getElementById('detailModal').style.display='none'" class="btn-gold">확인</button>
         </div>
     </div>
 
@@ -111,7 +123,33 @@
 
         let heroImgData = "";
 
-        // 모든 전역 함수 window 연결
+        // [Auth Logic]
+        window.checkPass = () => {
+            const pass = document.getElementById('passInput').value;
+            if (pass === "7777") {
+                sessionStorage.setItem('fit_auth', 'true');
+                initAdmin();
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+                document.getElementById('passInput').value = "";
+            }
+        };
+
+        const initAdmin = async () => {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main').style.display = 'block';
+            
+            try {
+                let cfg = await firebase.getConfig() || {};
+                document.getElementById('siteLogo').value = cfg.logo || "";
+                document.getElementById('bannerLink').value = cfg.bannerLink || "";
+                if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
+                renderAll();
+            } catch (e) { console.error(e); renderAll(); }
+        };
+
+        // 전역 함수 연결
         window.showTab = (id, el) => {
             document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
@@ -174,7 +212,6 @@
         };
 
         const renderAll = async () => {
-            console.log("Rendering all...");
             let ps = []; try { ps = await firebase.getPosts(); } catch(e) {}
             document.getElementById('pList').innerHTML = ps.map(p => `
                 <tr><td><b>${p.title}</b></td><td>
@@ -227,35 +264,9 @@
         window.delP = async (id) => { if(confirm('삭제?')) { await firebase.deletePost(id); renderAll(); } };
         window.delS = async (i) => { if(confirm('삭제?')) { let ss = await firebase.getSurveyMasterItems(); ss.splice(i,1); await firebase.updateSurveyMaster(ss); renderAll(); } };
 
-        // [핵심 로직] 비밀번호 체크 및 화면 로드
-        window.onload = async () => {
-            console.log("Window loaded, checking password...");
-            
-            if (sessionStorage.getItem('fit_auth') !== 'true') {
-                const code = prompt('관리자 비밀번호를 입력하세요.');
-                if (code === "7777") {
-                    sessionStorage.setItem('fit_auth', 'true');
-                } else {
-                    alert('비밀번호가 일치하지 않습니다.');
-                    location.href = 'index.html';
-                    return;
-                }
-            }
-
-            // [핵심] 인증 통과 시 강제로 모든 스타일 display 변경
-            document.getElementById('sidebar').style.display = 'flex';
-            document.getElementById('main').style.display = 'block';
-
-            // 데이터 로드
-            try {
-                let cfg = await firebase.getConfig() || {};
-                document.getElementById('siteLogo').value = cfg.logo || "";
-                document.getElementById('bannerLink').value = cfg.bannerLink || "";
-                if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
-                renderAll();
-            } catch (e) {
-                console.warn("Initial data load error:", e);
-                renderAll(); // 실패해도 로컬 데이터 기반으로라도 렌더링 시도
+        window.onload = () => {
+            if (sessionStorage.getItem('fit_auth') === 'true') {
+                initAdmin();
             }
         };
     </script>

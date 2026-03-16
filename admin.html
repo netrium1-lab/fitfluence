@@ -6,15 +6,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         :root { --gold: #D4AF37; --gold-grad: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); --bg: #0a0a0a; --card: #151515; }
-        body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #fff; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #fff; overflow: hidden; }
         
-        /* 사이드바 디자인 (image_5f3ebd 스타일) */
-        .sidebar { width: 300px; background: #000; border-right: 1px solid #222; padding: 40px 30px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar { width: 300px; background: #000; border-right: 1px solid #222; padding: 40px 30px; flex-shrink: 0; display: none; flex-direction: column; }
         .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.6rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
         .menu-item { padding: 18px 25px; cursor: pointer; border-radius: 15px; margin-bottom: 12px; color: #fff; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
         .menu-item:hover, .menu-item.active { background: #222; color: var(--gold); }
 
-        .main { flex: 1; padding: 60px; overflow-y: auto; }
+        .main { flex: 1; padding: 60px; overflow-y: auto; display: none; }
         .card { background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid #222; margin-bottom: 35px; }
         .tab { display: none; } .tab.active { display: block; }
         
@@ -27,33 +26,47 @@
         .btn-sm { padding: 8px 15px; font-size: 0.85rem; margin-left: 5px; font-weight: bold; }
         .btn-excel { background: #1D6F42; color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
 
-        /* 리스트 테이블 디자인 */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #1a1a1a; color: var(--gold); padding: 18px; text-align: left; border-bottom: 2px solid #333; }
         td { padding: 18px; border-bottom: 1px solid #222; color: #fff; }
 
-        /* 상세 보기 모달 */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 9999; align-items:center; justify-content:center; }
         .modal-inner { background:#111; padding:50px; border-radius:40px; border:1px solid var(--gold); max-width:650px; width:90%; max-height:85vh; overflow-y:auto; color: #fff; }
         
         #preview { width: 100%; height: 200px; background: #000; border: 1px solid #333; border-radius: 20px; overflow: hidden; margin-bottom: 20px; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
+
+        #loginModal { display: flex; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 10000; align-items:center; justify-content:center; }
+        .login-box { background:#111; padding:50px; border-radius:30px; border:1px solid #333; width:400px; text-align:center; }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <!-- [로그인 모달] -->
+    <div id="loginModal">
+        <div class="login-box">
+            <h2 style="color:var(--gold); margin-bottom:30px;">관리자 로그인</h2>
+            <input type="email" id="loginEmail" placeholder="이메일">
+            <input type="password" id="loginPass" placeholder="비밀번호">
+            <button onclick="handleLogin()" class="btn-gold" style="width:100%;">로그인</button>
+            <p id="loginError" style="color:red; margin-top:20px; font-size:0.9rem;"></p>
+        </div>
+    </div>
+
+    <!-- [사이드바] -->
+    <div id="sidebar" class="sidebar">
         <h2>FIT-FLUENCE 관리</h2>
-        <div class="menu-item active" onclick="showTab('design', this)">⚙️ 사이트/배너 설정</div>
-        <div class="menu-item" onclick="showTab('posts', this)">📝 게시글 관리</div>
-        <div class="menu-item" onclick="showTab('survey', this)">📊 혈액검사 항목 관리</div>
-        <div class="menu-item" onclick="showTab('consult', this)">👤 상담 신청 명단</div>
+        <div class="menu-item active" onclick="showTab('tab-design', this)">⚙️ 사이트 설정</div>
+        <div class="menu-item" onclick="showTab('tab-posts', this)">📝 게시글 관리</div>
+        <div class="menu-item" onclick="showTab('tab-survey', this)">📊 설문 항목</div>
+        <div class="menu-item" onclick="showTab('tab-consult', this)">👤 상담 명단</div>
         <div class="menu-item" style="margin-top:auto; color:#888;" onclick="handleLogout()">🚪 로그아웃</div>
     </div>
 
-    <div class="main">
-        <div id="design" class="tab active">
+    <!-- [메인 영역] -->
+    <div id="main" class="main">
+        <div id="tab-design" class="tab active">
             <div class="card" style="background:#1a1500; border-color:var(--gold);">
-                <h3 style="color:var(--gold); margin-bottom:20px;">🛡️ 데이터 금고 (백업 및 복구)</h3>
+                <h3 style="color:var(--gold); margin-bottom:20px;">🛡️ 데이터 금고</h3>
                 <button class="btn-gold" onclick="backup()">💾 백업하기</button>
                 <button class="btn-gold" style="background:#444; color:#fff;" onclick="document.getElementById('reFile').click()">📂 복구하기</button>
                 <input type="file" id="reFile" style="display:none" onchange="restore(this)">
@@ -61,126 +74,69 @@
             <div class="card">
                 <h1>⚙️ 사이트 기본 설정</h1>
                 <label>로고 이름</label><input type="text" id="siteLogo">
-                <label>🔗 유튜브 배너 링크</label><input type="text" id="bannerLink">
-                <label>🖼️ 메인 배경 변경</label>
-                <div id="preview"></div><input type="file" onchange="pickHero(this)" accept="image/*">
-                <button class="btn-gold" onclick="saveDesign()">모든 설정 저장하기</button>
+                <label>🔗 배너 링크</label><input type="text" id="bannerLink">
+                <label>🖼️ 메인 배경</label>
+                <div id="preview"></div>
+                <input type="file" onchange="pickHero(this)" accept="image/*">
+                <button class="btn-gold" onclick="saveDesign()">설정 저장</button>
             </div>
         </div>
 
-        <div id="posts" class="tab">
+        <div id="tab-posts" class="tab">
             <div class="card">
                 <h1>📝 게시글 관리</h1>
-                <button class="btn-gold" onclick="location.href='editor.html'">+ 블랙 에디터로 새 글 쓰기</button>
+                <button class="btn-gold" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
                 <table><thead><tr><th>제목</th><th>관리</th></tr></thead><tbody id="pList"></tbody></table>
             </div>
         </div>
 
-        <div id="survey" class="tab">
+        <div id="tab-survey" class="tab">
             <div class="card">
-                <h1 id="sHeader">📊 혈액검사 항목 관리</h1>
+                <h1 id="sHeader">📊 설문 항목 관리</h1>
                 <input type="hidden" id="editSurveyIdx">
-                <label>항목 이름 (질문)</label><input type="text" id="newT" placeholder="예: 크레아틴 수치">
-                <label>옵션 (콤마 구분)</label><input type="text" id="newO" placeholder="예: 0.5~1.4, 1.4이상">
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-gold" id="sSaveBtn" onclick="saveSurvey()">항목 저장/추가</button>
-                    <button class="btn-gold" style="background:#444; color:#fff; display:none;" id="sCancelBtn" onclick="resetSurveyForm()">취소</button>
-                </div>
+                <label>질문</label><input type="text" id="newT">
+                <label>옵션 (콤마 구분)</label><input type="text" id="newO">
+                <button class="btn-gold" id="sSaveBtn" onclick="saveSurvey()">저장/추가</button>
+                <button class="btn-gold" style="background:#444; color:#fff; display:none;" id="sCancelBtn" onclick="resetSurveyForm()">취소</button>
                 <div id="sList" style="margin-top:40px;"></div>
             </div>
         </div>
 
-        <div id="consult" class="tab">
+        <div id="tab-consult" class="tab">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h1>👤 상담 신청 명단</h1>
-                    <button class="btn-excel" onclick="exportToExcel()">📊 전체 명단 엑셀 다운로드</button>
+                    <h1>👤 상담 명단</h1>
+                    <button class="btn-excel" onclick="exportToExcel()">엑셀 다운로드</button>
                 </div>
-                <table>
-                    <thead><tr><th>신청일</th><th>성함</th><th>연락처</th><th>상세보기</th></tr></thead>
-                    <tbody id="consultList"></tbody>
-                </table>
+                <table><thead><tr><th>날짜</th><th>이름</th><th>연락처</th><th>상세</th></tr></thead><tbody id="consultList"></tbody></table>
             </div>
         </div>
     </div>
 
-    <div id="detailModal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-inner" onclick="event.stopPropagation()">
-            <h2 style="color:var(--gold); border-bottom:1px solid #333; padding-bottom:15px; margin-bottom:25px;">📋 신청자 상세 데이터</h2>
-            <div id="detailContent" style="line-height:2.2; font-size:1.1rem; color:#eee;"></div>
-            <button onclick="document.getElementById('detailModal').style.display='none'" class="btn-gold" style="width:100%; margin-top:30px;">확인 완료</button>
-        </div>
-    </div>
-
-    <!-- [NEW] Login Modal -->
-    <div id="loginModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#111; padding:50px; border-radius:30px; border:1px solid #333; width:400px; text-align:center;">
-            <h2 style="color:var(--gold); margin-bottom:30px;">관리자 로그인</h2>
-            <input type="email" id="loginEmail" placeholder="이메일" style="margin-bottom:15px;">
-            <input type="password" id="loginPass" placeholder="비밀번호" style="margin-bottom:25px;">
-            <button onclick="handleLogin()" class="btn-gold" style="width:100%;">로그인</button>
-            <p id="loginError" style="color:red; margin-top:20px; font-size:0.9rem;"></p>
+    <!-- 상세 모달 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-inner">
+            <h2 style="color:var(--gold); margin-bottom:30px;">📋 상세 내역</h2>
+            <div id="detailContent" style="line-height:2.2; font-size:1.1rem;"></div>
+            <button onclick="document.getElementById('detailModal').style.display='none'" class="btn-gold" style="width:100%; margin-top:30px;">확인</button>
         </div>
     </div>
 
     <script type="module">
         import * as firebase from './firebase-logic.js';
 
-        console.log("Firebase logic initialized");
+        console.log("Admin module loaded");
+        let heroImgData = "";
 
-        // Check authentication
-        firebase.onAuth((user) => {
-            console.log("Auth state changed:", user ? "User logged in" : "User not logged in");
-            if (!user) {
-                document.getElementById('loginModal').style.display = 'flex';
-                const container = document.querySelector('.container');
-                const sidebar = document.querySelector('.sidebar');
-                const main = document.querySelector('.main');
-                if(container) container.style.display = 'none';
-                if(sidebar) sidebar.style.display = 'none';
-                if(main) main.style.display = 'none';
-            } else {
-                document.getElementById('loginModal').style.display = 'none';
-                const container = document.querySelector('.container');
-                const sidebar = document.querySelector('.sidebar');
-                const main = document.querySelector('.main');
-                if(container) container.style.display = 'block';
-                if(sidebar) sidebar.style.display = 'flex';
-                if(main) main.style.display = 'block';
-                console.log("Calling renderAll...");
-                renderAll();
-            }
-        });
-
-        window.handleLogin = async function() {
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            console.log("Attempting login for:", email);
-            try {
-                await firebase.login(email, pass);
-                console.log("Login successful");
-            } catch (e) {
-                console.error("Login error:", e);
-                document.getElementById('loginError').innerText = "로그인 실패: " + e.message;
-            }
-        }
-
-        window.handleLogout = async function() {
-            if(confirm('로그아웃 하시겠습니까?')) {
-                await firebase.logout();
-                location.reload();
-            }
-        }
-
-        window.showTab = function(id, el) {
+        // [Global Functions]
+        window.showTab = (id, el) => {
             document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
             document.getElementById(id).classList.add('active'); el.classList.add('active');
             renderAll();
-        }
+        };
 
-        let heroImgData = "";
-        window.pickHero = function(i) {
+        window.pickHero = (i) => {
             if(i.files[0]) {
                 const r = new FileReader();
                 r.onload = e => {
@@ -197,247 +153,142 @@
                 };
                 r.readAsDataURL(i.files[0]);
             }
-        }
+        };
 
-        window.saveDesign = async function() {
-            let current = {};
-            try {
-                current = await firebase.getConfig() || {};
-            } catch (e) {
-                current = JSON.parse(localStorage.getItem('fitConfig') || '{}');
-            }
-            
+        window.saveDesign = async () => {
+            let current = {}; try { current = await firebase.getConfig() || {}; } catch(e){}
             let finalImg = current.img;
             if (heroImgData) {
-                try {
-                    finalImg = await firebase.uploadImage('config/hero.jpg', heroImgData);
-                } catch (e) {
-                    console.warn('Firebase storage failed, using base64:', e);
-                    finalImg = heroImgData;
-                }
+                try { finalImg = await firebase.uploadImage('config/hero.jpg', heroImgData); } catch(e) { finalImg = heroImgData; }
             }
-
             const cfg = { logo: document.getElementById('siteLogo').value, bannerLink: document.getElementById('bannerLink').value, img: finalImg };
-            
-            try {
-                await firebase.updateConfig(cfg);
-            } catch (e) {
-                console.warn('Saving to localStorage:', e);
-                localStorage.setItem('fitConfig', JSON.stringify(cfg));
-            }
-            alert('저장 완료!');
-        }
+            try { await firebase.updateConfig(cfg); alert('저장 완료!'); } catch(e) { console.error(e); }
+        };
 
-        window.saveSurvey = async function() {
+        window.saveSurvey = async () => {
             const t = document.getElementById('newT').value; const o = document.getElementById('newO').value;
             const idx = document.getElementById('editSurveyIdx').value;
             if(!t || !o) return alert('내용을 입력하세요.');
-            
-            let s = [];
-            try {
-                s = await firebase.getSurveyMasterItems();
-            } catch (e) {
-                s = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-            }
-            
+            let s = []; try { s = await firebase.getSurveyMasterItems(); } catch(e) { s = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]'); }
             if(idx !== "") s[idx] = {t, o}; else s.push({t, o});
-            
-            try {
-                await firebase.updateSurveyMaster(s);
-            } catch (e) {
-                console.warn('Saving to localStorage:', e);
-                localStorage.setItem('fitSurveyMaster', JSON.stringify(s));
-            }
-            
-            resetSurveyForm(); renderAll();
-        }
+            try { await firebase.updateSurveyMaster(s); resetSurveyForm(); renderAll(); } catch(e) { console.error(e); }
+        };
 
-        window.editS = async function(i) {
-            let s_list = [];
-            try {
-                s_list = await firebase.getSurveyMasterItems();
-            } catch (e) {
-                s_list = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-            }
+        window.editS = async (i) => {
+            let s_list = []; try { s_list = await firebase.getSurveyMasterItems(); } catch(e) { s_list = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]'); }
             const s = s_list[i];
             document.getElementById('newT').value = s.t; document.getElementById('newO').value = s.o;
             document.getElementById('editSurveyIdx').value = i;
             document.getElementById('sHeader').innerText = "✏️ 항목 수정 중...";
             document.getElementById('sSaveBtn').innerText = "수정 완료";
             document.getElementById('sCancelBtn').style.display = "inline-block";
-        }
+        };
 
-        window.resetSurveyForm = function() {
+        window.resetSurveyForm = () => {
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             document.getElementById('editSurveyIdx').value = "";
-            document.getElementById('sHeader').innerText = "📊 혈액검사 항목 관리";
-            document.getElementById('sSaveBtn').innerText = "항목 추가하기";
+            document.getElementById('sHeader').innerText = "📊 설문 항목 관리";
+            document.getElementById('sSaveBtn').innerText = "저장/추가";
             document.getElementById('sCancelBtn').style.display = "none";
-        }
+        };
 
-        window.renderAll = async function() {
-            // 1. 게시글 리스트
-            let ps = [];
-            try {
-                ps = await firebase.getPosts();
-            } catch (e) {
-                ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-            }
+        const renderAll = async () => {
+            console.log("Rendering all...");
+            // 1. Posts
+            let ps = []; try { ps = await firebase.getPosts(); } catch(e) {}
             document.getElementById('pList').innerHTML = ps.map(p => `
-                <tr>
-                    <td><b>${p.title}</b></td>
-                    <td>
-                        <button class="btn-gold btn-sm" onclick="location.href='editor.html?id=${p.id}'">수정</button>
-                        <button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delP('${p.id}')">삭제</button>
-                    </td>
-                </tr>`).join('');
+                <tr><td><b>${p.title}</b></td><td>
+                    <button class="btn-gold btn-sm" onclick="location.href='editor.html?id=${p.id}'">수정</button>
+                    <button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delP('${p.id}')">삭제</button>
+                </td></tr>`).join('');
             
-            // 2. 혈액항목 리스트
-            let ss = [];
-            try {
-                ss = await firebase.getSurveyMasterItems();
-            } catch (e) {
-                ss = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-            }
+            // 2. Survey
+            let ss = []; try { ss = await firebase.getSurveyMasterItems(); } catch(e) {}
             document.getElementById('sList').innerHTML = ss.map((s, i) => `
-                <div style="padding:18px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>${s.t}</b> <small style="color:#888;">(${s.o})</small></span>
-                    <div>
-                        <button class="btn-gold btn-sm" onclick="editS(${i})">수정</button>
-                        <button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delS(${i})">삭제</button>
-                    </div>
+                <div style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${s.t}</b> <small>(${s.o})</small></span>
+                    <div><button class="btn-gold btn-sm" onclick="editS(${i})">수정</button><button class="btn-gold btn-sm" style="background:red; color:#fff;" onclick="delS(${i})">삭제</button></div>
                 </div>`).join('');
 
-            // 3. 신청자 요약 리스트
-            let cs = [];
-            try {
-                cs = await firebase.getConsults();
-            } catch (e) {
-                cs = JSON.parse(localStorage.getItem('fitConsults') || '[]');
-            }
+            // 3. Consults
+            let cs = []; try { cs = await firebase.getConsults(); } catch(e) {}
             document.getElementById('consultList').innerHTML = cs.map((c, i) => `
-                <tr>
-                    <td style="color:#888; font-size:0.85rem;">${c.date}</td>
-                    <td><b>${c.name}</b></td>
-                    <td>${c.phone}</td>
-                    <td><button class="btn-gold btn-sm" onclick="showDetail(${i})">상세보기</button></td>
-                </tr>`).join('');
-        }
+                <tr><td>${c.date}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td><button class="btn-gold btn-sm" onclick="showDetail(${i})">보기</button></td></tr>`).join('');
+        };
 
-        window.showDetail = async function(i) {
-            let cs = [];
-            try {
-                cs = await firebase.getConsults();
-            } catch (e) {
-                cs = JSON.parse(localStorage.getItem('fitConsults') || '[]');
-            }
+        window.showDetail = async (i) => {
+            let cs = []; try { cs = await firebase.getConsults(); } catch(e) {}
             const d = cs[i];
-            let html = `<p><b>이름:</b> ${d.name}</p><p><b>연락처:</b> ${d.phone}</p><hr style="border:0; border-top:1px solid #333; margin:20px 0;">`;
-            d.answers.forEach(a => html += `<p style="margin-bottom:8px;">${a}</p>`);
+            let html = `<p><b>이름:</b> ${d.name}</p><p><b>연락처:</b> ${d.phone}</p><hr style="border-top:1px solid #333;">`;
+            d.answers.forEach(a => html += `<p>${a}</p>`);
             document.getElementById('detailContent').innerHTML = html;
             document.getElementById('detailModal').style.display = 'flex';
-        }
+        };
 
-        window.exportToExcel = async function() {
-            let cs = [];
-            try {
-                cs = await firebase.getConsults();
-            } catch (e) {
-                cs = JSON.parse(localStorage.getItem('fitConsults') || '[]');
-            }
-            if(cs.length === 0) return alert('다운로드할 명단이 없습니다.');
-            let csv = "\uFEFF신청일,성함,연락처,분석데이터\n";
-            cs.forEach(c => csv += `${c.date},${c.name},${c.phone},"${c.answers.join(' / ')}"\n`);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `상담명단_${new Date().toLocaleDateString()}.csv`;
-            link.click();
-        }
+        window.handleLogin = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            console.log("Login attempt:", email);
+            try { await firebase.login(email, pass); } catch(e) { document.getElementById('loginError').innerText = "실패: " + e.message; }
+        };
 
-        window.delP = async function(id) { 
-            if(confirm('게시글을 삭제할까요?')) { 
-                try {
-                    await firebase.deletePost(id);
-                } catch (e) {
-                    let ps = JSON.parse(localStorage.getItem('fitPosts')); 
-                    ps = ps.filter(p => String(p.id) !== String(id)); 
-                    localStorage.setItem('fitPosts', JSON.stringify(ps)); 
-                }
-                renderAll(); 
-            } 
-        }
-        
-        window.delS = async function(i) { 
-            if(confirm('항목을 삭제할까요?')) { 
-                let ss = [];
-                try {
-                    ss = await firebase.getSurveyMasterItems();
-                } catch (e) {
-                    ss = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-                }
-                ss.splice(i, 1); 
-                try {
-                    await firebase.updateSurveyMaster(ss);
-                } catch (e) {
-                    localStorage.setItem('fitSurveyMaster', JSON.stringify(ss)); 
-                }
-                renderAll(); 
-            } 
-        }
-        
-        window.backup = function() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(localStorage)], {type:'application/json'})); a.download = 'FIT_BACKUP.json'; a.click(); }
-        
-        window.restore = function(i) {
+        window.handleLogout = async () => { if(confirm('로그아웃?')) { await firebase.logout(); location.reload(); } };
+
+        window.backup = () => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(localStorage)], {type:'application/json'}));
+            a.download = 'BACKUP.json'; a.click();
+        };
+
+        window.restore = (i) => {
             const reader = new FileReader();
             reader.onload = async e => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    
-                    // 1. 로컬 저장소 복구
                     Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-                    
-                    if(confirm('데이터를 클라우드(Firebase)에도 즉시 동기화할까요?')) {
-                        console.log("Syncing to Firebase...");
-                        
-                        // 2. Firebase 동기화 (설정)
+                    if(confirm('Firebase 동기화?')) {
                         if(data.fitConfig) await firebase.updateConfig(JSON.parse(data.fitConfig));
-                        
-                        // 3. Firebase 동기화 (설문 항목)
                         if(data.fitSurveyMaster) await firebase.updateSurveyMaster(JSON.parse(data.fitSurveyMaster));
-                        
-                        // 4. Firebase 동기화 (게시글)
-                        if(data.fitPosts) {
-                            const ps = JSON.parse(data.fitPosts);
-                            for(const p of ps) {
-                                await firebase.savePost(p.id, p);
-                            }
-                        }
-                        alert('클라우드 동기화까지 모두 완료되었습니다!');
-                    } else {
-                        alert('로컬 복구만 완료되었습니다. (새로고침 후 반영)');
+                        if(data.fitPosts) { for(const p of JSON.parse(data.fitPosts)) { await firebase.savePost(p.id, p); } }
+                        alert('완료');
                     }
                     location.reload();
-                } catch (err) {
-                    console.error("Restore error:", err);
-                    alert('복구 중 오류가 발생했습니다: ' + err.message);
-                }
+                } catch(err) { alert('실패'); }
             };
             reader.readAsText(i.files[0]);
-        }
+        };
 
-        window.onload = async function() {
-            let cfg = {};
-            try {
-                cfg = await firebase.getConfig() || {};
-            } catch (e) {
-                cfg = JSON.parse(localStorage.getItem('fitConfig') || '{}');
+        window.delP = async (id) => { if(confirm('삭제?')) { await firebase.deletePost(id); renderAll(); } };
+        window.delS = async (i) => { 
+            if(confirm('삭제?')) { 
+                let ss = await firebase.getSurveyMasterItems(); 
+                ss.splice(i,1); await firebase.updateSurveyMaster(ss); renderAll(); 
+            } 
+        };
+
+        firebase.onAuth((user) => {
+            console.log("Auth state change:", user ? "User" : "None");
+            if (!user) {
+                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('main').style.display = 'none';
+            } else {
+                document.getElementById('loginModal').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('main').style.display = 'block';
+                (async () => {
+                    let cfg = {}; try { cfg = await firebase.getConfig() || {}; } catch(e){}
+                    document.getElementById('siteLogo').value = cfg.logo || "";
+                    document.getElementById('bannerLink').value = cfg.bannerLink || "";
+                    if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
+                    renderAll();
+                })();
             }
-            document.getElementById('siteLogo').value = cfg.logo || "";
-            document.getElementById('bannerLink').value = cfg.bannerLink || "";
-            if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
-            renderAll();
-        }
+        });
+
+        // Global export to window for delP, delS etc
+        window.delP = window.delP; window.delS = window.delS;
+        window.editS = window.editS; window.showDetail = window.showDetail;
     </script>
 </body>
 </html>

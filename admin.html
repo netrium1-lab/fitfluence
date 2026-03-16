@@ -8,6 +8,7 @@
         :root { --gold: #D4AF37; --gold-grad: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); --bg: #0a0a0a; --card: #151515; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #fff; overflow: hidden; }
         
+        /* [핵심] 기본적으로 모든 요소를 숨김 (나중에 JS로 보임 처리) */
         .sidebar { width: 300px; background: #000; border-right: 1px solid #222; padding: 40px 30px; flex-shrink: 0; display: none; flex-direction: column; }
         .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.6rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
         .menu-item { padding: 18px 25px; cursor: pointer; border-radius: 15px; margin-bottom: 12px; color: #fff; font-weight: 600; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
@@ -38,7 +39,6 @@
     </style>
 </head>
 <body>
-    <!-- [사이드바] -->
     <div id="sidebar" class="sidebar">
         <h2>FIT-FLUENCE 관리</h2>
         <div class="menu-item active" onclick="showTab('tab-design', this)">⚙️ 사이트 설정</div>
@@ -48,7 +48,6 @@
         <div class="menu-item" style="margin-top:auto; color:#888;" onclick="handleLogout()">🚪 로그아웃</div>
     </div>
 
-    <!-- [메인 영역] -->
     <div id="main" class="main">
         <div id="tab-design" class="tab active">
             <div class="card" style="background:#1a1500; border-color:var(--gold);">
@@ -99,7 +98,6 @@
         </div>
     </div>
 
-    <!-- 상세 모달 -->
     <div id="detailModal" class="modal">
         <div class="modal-inner">
             <h2 style="color:var(--gold); margin-bottom:30px;">📋 상세 내역</h2>
@@ -113,7 +111,7 @@
 
         let heroImgData = "";
 
-        // [Global Functions]
+        // 모든 전역 함수 window 연결
         window.showTab = (id, el) => {
             document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
@@ -143,9 +141,7 @@
         window.saveDesign = async () => {
             let current = {}; try { current = await firebase.getConfig() || {}; } catch(e){}
             let finalImg = current.img;
-            if (heroImgData) {
-                try { finalImg = await firebase.uploadImage('config/hero.jpg', heroImgData); } catch(e) { finalImg = heroImgData; }
-            }
+            if (heroImgData) { try { finalImg = await firebase.uploadImage('config/hero.jpg', heroImgData); } catch(e) { finalImg = heroImgData; } }
             const cfg = { logo: document.getElementById('siteLogo').value, bannerLink: document.getElementById('bannerLink').value, img: finalImg };
             try { await firebase.updateConfig(cfg); alert('저장 완료!'); } catch(e) { console.error(e); }
         };
@@ -208,12 +204,7 @@
         };
 
         window.handleLogout = () => { if(confirm('로그아웃?')) { sessionStorage.removeItem('fit_auth'); location.reload(); } };
-
-        window.backup = () => {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(localStorage)], {type:'application/json'}));
-            a.download = 'BACKUP.json'; a.click();
-        };
+        window.backup = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(localStorage)], {type:'application/json'})); a.download = 'BACKUP.json'; a.click(); };
 
         window.restore = (i) => {
             const reader = new FileReader();
@@ -234,35 +225,38 @@
         };
 
         window.delP = async (id) => { if(confirm('삭제?')) { await firebase.deletePost(id); renderAll(); } };
-        window.delS = async (i) => { 
-            if(confirm('삭제?')) { 
-                let ss = await firebase.getSurveyMasterItems(); 
-                ss.splice(i,1); await firebase.updateSurveyMaster(ss); renderAll(); 
-            } 
-        };
+        window.delS = async (i) => { if(confirm('삭제?')) { let ss = await firebase.getSurveyMasterItems(); ss.splice(i,1); await firebase.updateSurveyMaster(ss); renderAll(); } };
 
-        // [핵심] 7777 비밀번호 체크
+        // [핵심 로직] 비밀번호 체크 및 화면 로드
         window.onload = async () => {
+            console.log("Window loaded, checking password...");
+            
             if (sessionStorage.getItem('fit_auth') !== 'true') {
-                const code = prompt('보안 코드를 입력하세요 (비밀번호 4자리)');
+                const code = prompt('관리자 비밀번호를 입력하세요.');
                 if (code === "7777") {
                     sessionStorage.setItem('fit_auth', 'true');
                 } else {
-                    alert('코드가 일치하지 않습니다.');
+                    alert('비밀번호가 일치하지 않습니다.');
                     location.href = 'index.html';
                     return;
                 }
             }
-            
-            // 인증 통과 시 화면 표시
+
+            // [핵심] 인증 통과 시 강제로 모든 스타일 display 변경
             document.getElementById('sidebar').style.display = 'flex';
             document.getElementById('main').style.display = 'block';
 
-            let cfg = {}; try { cfg = await firebase.getConfig() || {}; } catch(e){}
-            document.getElementById('siteLogo').value = cfg.logo || "";
-            document.getElementById('bannerLink').value = cfg.bannerLink || "";
-            if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
-            renderAll();
+            // 데이터 로드
+            try {
+                let cfg = await firebase.getConfig() || {};
+                document.getElementById('siteLogo').value = cfg.logo || "";
+                document.getElementById('bannerLink').value = cfg.bannerLink || "";
+                if(cfg.img) { heroImgData = cfg.img; document.getElementById('preview').innerHTML = `<img src="${cfg.img}">`; }
+                renderAll();
+            } catch (e) {
+                console.warn("Initial data load error:", e);
+                renderAll(); // 실패해도 로컬 데이터 기반으로라도 렌더링 시도
+            }
         };
     </script>
 </body>

@@ -2,111 +2,216 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>FIT-FLUENCE PREMIUM EDITOR</title>
+    <title>FIT-FLUENCE 프리미엄 에디터</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Firebase SDK (Compat Mode) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
         :root { --gold: #D4AF37; --bg: #050505; --card: #121212; }
-        body { font-family: sans-serif; background: var(--bg); color: #fff; padding: 40px; margin: 0; }
-        .container { max-width: 1000px; margin: 0 auto; background: var(--card); border: 1px solid #333; border-radius: 40px; padding: 50px; }
-        h1 { color: var(--gold); text-align: center; margin-bottom: 40px; font-weight: 900; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 20px; }
+        .editor-container { max-width: 1000px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 30px; border: 1px solid #333; }
+        h1 { color: var(--gold); margin-bottom: 30px; font-weight: 900; text-align: center; }
         
-        input, select { width: 100%; padding: 20px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 15px; font-size: 1.1rem; outline: none; }
-        input:focus { border-color: var(--gold); }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 10px; color: var(--gold); font-weight: bold; }
+        input, select { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; }
+
+        .library-area { background: #1a1a1a; padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #333; }
+        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .img-item { background: #000; border-radius: 15px; overflow: hidden; border: 1px solid #444; display: flex; flex-direction: column; }
+        .img-item img { width: 100%; height: 120px; object-fit: cover; }
+        .insert-btn { background: var(--gold); color: #000; border: none; padding: 10px; font-weight: 900; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+        .insert-btn:hover { background: #fff; }
+
+        .toolbar { background: #1a1a1a; padding: 15px; border-radius: 15px 15px 0 0; border: 1px solid #333; border-bottom: none; display: flex; gap: 10px; align-items: center; }
+        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        .toolbar { background: #1a1a1a; padding: 15px; border-radius: 15px 15px 0 0; border: 1px solid #333; border-bottom: none; display: flex; gap: 12px; align-items: center; }
-        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .tool-btn:hover { background: var(--gold); color: #000; }
+        #pContent { width: 100%; min-height: 500px; padding: 30px; background: #000; border: 1px solid #333; border-radius: 0 0 15px 15px; color: #fff; overflow-y: auto; font-size: 1.1rem; line-height: 1.8; outline: none; }
+        #pContent img { max-width: 100%; border-radius: 12px; margin: 25px 0; display: block; }
+
+        .btn-wrap { margin-top: 50px; text-align: center; display: flex; gap: 20px; justify-content: center; }
+        .publish-btn { background: var(--gold); color: #000; border: none; padding: 22px 80px; border-radius: 100px; font-size: 1.3rem; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .publish-btn:hover { transform: scale(1.03); background: #f2e3b1; }
+        .publish-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .cancel-btn { background: #222; color: #888; border: 1px solid #333; padding: 22px 40px; border-radius: 100px; cursor: pointer; }
         
-        #editor { min-height: 600px; background: #000; color: #eee; padding: 40px; border-radius: 0 0 15px 15px; border: 1px solid #333; font-size: 1.25rem; line-height: 2.2; outline: none; overflow-y: auto; }
-        #editor img { max-width: 100%; border-radius: 15px; display: block; margin: 30px auto; }
-        
-        .publish-btn { background: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); color: #000; border: none; padding: 25px; width: 100%; border-radius: 100px; font-weight: 900; font-size: 1.5rem; cursor: pointer; margin-top: 40px; transition: 0.3s; }
-        .publish-btn:hover { transform: scale(1.02); }
+        #statusInfo { display: none; color: var(--gold); font-size: 0.9rem; margin-bottom: 10px; text-align: center; background: rgba(212,175,55,0.1); padding: 8px; border-radius: 8px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 id="pageTitle">🖋️ 프리미엄 블랙 에디터</h1>
-        <input type="text" id="pTitle" placeholder="제목을 입력하세요">
-        <select id="pCate">
-            <option value="건강재테크">건강재테크</option>
-            <option value="핏솔루션">핏솔루션</option>
-            <option value="맞춤건강안내">맞춤건강안내</option>
-            <option value="커뮤니티">커뮤니티</option>
-        </select>
+    <div class="editor-container">
+        <h1>🖋️ FIT-FLUENCE 프리미엄 에디터</h1>
         
-        <div class="toolbar">
-            <button class="tool-btn" onclick="cmd('bold')">B (굵게)</button>
-            <button class="tool-btn" onclick="cmd('underline')">U (밑줄)</button>
-            <button class="tool-btn" onclick="cmd('foreColor', prompt('색상 코드:'))">🎨 색상</button>
-            <button class="tool-btn" onclick="document.getElementById('imgIn').click()" style="background:var(--gold); color:#000;">📷 사진 추가</button>
-            <input type="file" id="imgIn" style="display:none" onchange="insertImg(this)" accept="image/*">
+        <div class="form-group"><label>카테고리</label><select id="pCategory"><option value="건강재테크">건강재테크</option><option value="핏솔루션">핏솔루션</option><option value="맞춤건강안내">맞춤건강안내</option><option value="커뮤니티">커뮤니티</option></select></div>
+        <div class="form-group"><label>제목</label><input type="text" id="pTitle" placeholder="제목을 입력하세요"></div>
+
+        <div class="library-area">
+            <label>📸 사진 보관함</label>
+            <div id="statusInfo">사진을 처리 중입니다...</div>
+            <input type="file" id="imgInput" style="display:none" onchange="window.processImgs(this)" multiple accept="image/*">
+            <button onclick="document.getElementById('imgInput').click()" style="background:#333; color:var(--gold); border:1px solid var(--gold); padding:12px 25px; border-radius:12px; cursor:pointer; font-weight:bold;">+ 사진 불러오기</button>
+            <div id="imgGrid" class="img-grid"></div>
         </div>
-        
-        <div id="editor" contenteditable="true"></div>
-        
-        <button class="publish-btn" onclick="save()" id="saveBtn">발행하기</button>
-        <button onclick="location.href='admin.html'" style="background:none; border:none; color:#666; width:100%; margin-top:25px; cursor:pointer;">← 돌아가기</button>
+
+        <div class="toolbar">
+            <button class="tool-btn" onclick="window.execCmd('bold')">B</button>
+            <button class="tool-btn" onclick="window.execCmd('underline')">U</button>
+            <input type="color" style="width:35px;height:35px;border:none;background:none;cursor:pointer;" onchange="window.execCmd('foreColor', this.value)">
+            <button class="tool-btn" onclick="window.insertLink()">🔗 링크</button>
+            <button class="tool-btn" onclick="window.execCmd('formatBlock', 'h2')">T1</button>
+            <button class="tool-btn" onclick="window.execCmd('formatBlock', 'h3')">T2</button>
+        </div>
+        <div id="pContent" contenteditable="true" placeholder="이곳에 내용을 작성하세요..."></div>
+
+        <div class="btn-wrap">
+            <button class="publish-btn" onclick="window.savePost()" id="saveBtn">발행하기 (홈페이지 반영)</button>
+            <button class="cancel-btn" onclick="location.href='admin.html'">취소</button>
+        </div>
     </div>
 
-    <script type="module">
-        import * as firebase from './firebase-logic.js';
+    <script>
+        // 1. Firebase Initialize
+        const firebaseConfig = {
+            apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
+            authDomain: "fitflunce.firebaseapp.com",
+            projectId: "fitflunce",
+            storageBucket: "fitflunce.firebasestorage.app",
+            messagingSenderId: "186695294427",
+            appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
 
-        // 7777 세션 체크
-        if(sessionStorage.getItem('fit_auth') !== 'true') {
-            alert('로그인이 필요합니다.');
-            location.href = 'admin.html';
-        }
+        let mainThumb = ""; 
+        let currentImgUrls = []; // 업로드된 실제 URL들을 관리
 
-        const params = new URLSearchParams(location.search);
-        const editId = params.get('id');
+        window.processImgs = async function(input) {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
 
-        window.cmd = (c, v) => { document.execCommand(c, false, v); document.getElementById('editor').focus(); }
-        
-        window.insertImg = (input) => {
-            const file = input.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 1000; const scale = MAX / img.width;
-                    canvas.width = MAX; canvas.height = img.height * scale;
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    document.getElementById('editor').focus();
-                    document.execCommand('insertHTML', false, `<img src="${canvas.toDataURL('image/jpeg', 0.7)}"><br>`);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+            const info = document.getElementById('statusInfo');
+            info.style.display = 'block';
+            info.innerText = "사진을 보관함에 넣는 중입니다...";
 
-        window.save = async () => {
-            const title = document.getElementById('pTitle').value;
-            const category = document.getElementById('pCate').value;
-            const contentEl = document.getElementById('editor');
-            if(!title || !contentEl.innerHTML) return alert('입력하세요.');
+            for (const file of files) {
+                try {
+                    // 1. 즉시 압축 (매우 빠름)
+                    const dataUrl = await resizeImg(file, 800, 0.5);
+                    
+                    // 2. 화면에 즉시 표시 (기다리지 않음!)
+                    addImgToGrid(dataUrl);
+                    if(!mainThumb) mainThumb = dataUrl;
 
-            const imgs = contentEl.querySelectorAll('img');
-            for(let i=0; i<imgs.length; i++) {
-                if(imgs[i].src.startsWith('data:')) {
-                    const url = await firebase.uploadImage(`posts/${Date.now()}_${i}.jpg`, imgs[i].src);
-                    imgs[i].src = url;
+                    // 3. 서버 업로드는 백그라운드에서 진행 (실패해도 무관)
+                    uploadInBackground(file.name, dataUrl);
+                } catch (err) {
+                    console.error("Processing error:", err);
                 }
             }
-
-            const postData = { title, category, content: contentEl.innerHTML, date: new Date().toLocaleDateString(), image: contentEl.querySelector('img')?.src || "" };
-            try { await firebase.savePost(editId, postData); alert('완료!'); location.href = 'admin.html'; } catch(e) { console.error(e); }
+            
+            info.style.display = 'none';
+            input.value = "";
         }
 
-        window.onload = async () => {
-            if(editId) {
-                let p = null; try { p = await firebase.getPost(editId); } catch(e) {}
-                if(p) {
-                    document.getElementById('pTitle').value = p.title;
-                    document.getElementById('pCate').value = p.category;
-                    document.getElementById('editor').innerHTML = p.content;
-                    document.getElementById('pageTitle').innerText = "✏️ 게시글 수정";
-                }
+        async function uploadInBackground(fileName, dataUrl) {
+            try {
+                const ref = storage.ref().child(`posts/${Date.now()}_${fileName}`);
+                const snap = await ref.putString(dataUrl, 'data_url');
+                const serverUrl = await snap.ref.getDownloadURL();
+                
+                // 대표 이미지가 아직 로컬 데이터라면 서버 URL로 교체
+                if(mainThumb === dataUrl) mainThumb = serverUrl;
+                
+                // 보관함의 이미지도 서버 URL로 교체 (필요 시)
+                console.log("Cloud upload success:", serverUrl);
+            } catch (e) {
+                console.warn("Cloud upload failed, keeping local copy.");
+            }
+        }
+
+        function resizeImg(file, maxW, quality) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if(w > maxW) { h = h * (maxW/w); w = maxW; }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function addImgToGrid(src) {
+            const div = document.createElement('div');
+            div.className = 'img-item';
+            const btn = document.createElement('button');
+            btn.className = 'insert-btn';
+            btn.innerText = '본문 삽입';
+            btn.onclick = function() { window.insertBody(src); };
+            const img = document.createElement('img');
+            img.src = src;
+            div.appendChild(img);
+            div.appendChild(btn);
+            document.getElementById('imgGrid').appendChild(div);
+        }
+
+        window.insertBody = function(src) {
+            const tag = `<img src="${src}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;">`;
+            const content = document.getElementById('pContent');
+            content.focus();
+            document.execCommand('insertHTML', false, tag + '<br>');
+        }
+
+        window.execCmd = function(cmd, val=null) { 
+            document.execCommand(cmd, false, val); 
+            document.getElementById('pContent').focus(); 
+        }
+        
+        window.insertLink = function() { 
+            const url = prompt("링크 주소:"); 
+            if(url) window.execCmd('createLink', url); 
+        }
+
+        window.savePost = async function() {
+            const title = document.getElementById('pTitle').value;
+            const content = document.getElementById('pContent').innerHTML;
+            if(!title || !content.trim()) return alert('제목과 내용을 입력하세요!');
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.innerText = "본부에 보고 중...";
+            saveBtn.disabled = true;
+
+            const postData = {
+                title: title,
+                category: document.getElementById('pCategory').value,
+                content: content,
+                image: mainThumb,
+                date: new Date().toLocaleDateString(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection('posts').add(postData);
+                alert('서버 본부에 성공적으로 반영되었습니다!');
+                location.href = 'admin.html';
+            } catch(e) {
+                // 서버 실패 시 로컬 저장소 활용
+                const posts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                posts.push({ id: Date.now().toString(), ...postData });
+                localStorage.setItem('fitPosts', JSON.stringify(posts));
+                alert('서버 연결이 원활하지 않아 로컬에 우선 저장했습니다.');
+                location.href = 'admin.html';
             }
         }
     </script>

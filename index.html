@@ -3,57 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIT-FLUENCE GROUP - Premium</title>
+    <title>FIT-FLUENCE GROUP - J. Kevin Premium</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Firebase SDK (Compat Mode for maximum stability) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --gold: #D4AF37; --gold-grad: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%); --black: #050505; --card: #121212; }
+        :root { 
+            --gold: #D4AF37; 
+            --gold-gradient: linear-gradient(135deg, #F2E3B1 0%, #D4AF37 50%, #A68911 100%);
+            --metallic-gold: linear-gradient(135deg, #D4AF37 0%, #F2E3B1 25%, #A68911 50%, #F2E3B1 75%, #D4AF37 100%);
+            --black: #050505; --card-bg: #121212; --text-main: #FFFFFF; --text-sub: #888888;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; letter-spacing: -0.02em; }
-        body { background-color: var(--black); color: #fff; line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth; }
-        header { position: fixed; top: 0; width: 100%; z-index: 1000; background: rgba(5,5,5,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 18px 0; }
-        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.6rem; font-weight: 900; color: var(--gold); text-decoration: none; }
-        .admin-btn { background: transparent; color: var(--gold); padding: 8px 20px; border-radius: 30px; border: 1px solid var(--gold); cursor: pointer; font-size: 0.8rem; }
-        
-        /* 메인 배경 동적 반영 영역 */
-        .hero { height: 80vh; background: #000 center/cover no-repeat; margin-top: 60px; display: flex; align-items: flex-end; justify-content: center; position: relative; padding-bottom: 80px; }
-        .hero::after { content: ""; position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to bottom, transparent, #050505); }
-        .cta-wrap { position: relative; z-index: 10; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-        .main-cta { background: var(--gold-grad); color: #000; padding: 22px 60px; border-radius: 100px; font-weight: 900; font-size: 1.3rem; border: none; cursor: pointer; box-shadow: 0 10px 40px rgba(212,175,55,0.4); }
-        .event-cta { background: rgba(255,255,255,0.05); color: #fff; padding: 22px 50px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; font-size: 1.1rem; }
+        body { background-color: var(--black); color: var(--text-main); line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth; }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 80px 40px; }
-        .section-title { font-size: 2.2rem; font-weight: 800; color: var(--gold); margin-bottom: 45px; border-left: 6px solid var(--gold); padding-left: 20px; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 40px; margin-bottom: 80px; }
-        .card { background: var(--card); border-radius: 30px; overflow: hidden; cursor: pointer; border: 1px solid #222; transition: 0.3s; }
-        .card-img { width: 100%; height: 280px; object-fit: cover; }
-        .card-body { padding: 30px; }
+        header { position: fixed; top: 0; width: 100%; z-index: 1000; background: rgba(5, 5, 5, 0.7); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 15px 0; }
+        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 900; color: var(--gold); text-decoration: none; }
+        .admin-btn { background: transparent; color: var(--gold); padding: 8px 20px; border-radius: 30px; font-weight: 600; border: 1px solid var(--gold); cursor: pointer; transition: 0.3s; font-size: 0.8rem; }
+        .admin-btn:hover { background: var(--gold); color: #000; }
+
+        .hero { height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; background: #000 center/cover no-repeat; }
+        .hero::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%); }
+
+        .hero-banners { background: var(--black); padding: 120px 0; border-top: 1px solid rgba(212, 175, 55, 0.05); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+        .cta-wrap { display: flex; gap: 30px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        
+        .main-cta { background: var(--metallic-gold); background-size: 200% auto; color: #000; padding: 24px 70px; border-radius: 100px; font-weight: 900; font-size: 1.35rem; border: none; cursor: pointer; transition: 0.4s; box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3); }
+        .main-cta:hover { background-position: right center; transform: translateY(-8px); box-shadow: 0 20px 60px rgba(212, 175, 55, 0.5); }
+        
+        .sub-cta { background: rgba(255, 255, 255, 0.03); color: #fff; padding: 24px 60px; border-radius: 100px; font-weight: 700; font-size: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); cursor: pointer; transition: 0.3s; }
+        .sub-cta:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-5px); border-color: #fff; }
+
+        .section { padding: 100px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .section-title { font-size: 2.2rem; font-weight: 800; color: var(--gold); margin-bottom: 50px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 40px; }
+        .card { background: var(--card-bg); border-radius: 30px; overflow: hidden; cursor: pointer; transition: 0.5s; border: 1px solid rgba(255,255,255,0.03); }
+        .card:hover { transform: translateY(-15px); border-color: var(--gold); }
+        .card-img { width: 100%; height: 300px; object-fit: cover; filter: brightness(0.8); }
+        .card-body { padding: 40px; }
+        .card-body h3 { font-size: 1.6rem; font-weight: 800; margin-bottom: 15px; color: var(--text-main); }
 
         .footer-promo { background: #000; padding: 120px 40px; text-align: center; border-top: 1px solid #1a1a1a; }
         .tv-btn { display: inline-flex; align-items: center; gap: 15px; padding: 25px 80px; border-radius: 60px; background: #ff0000; color: #fff; text-decoration: none; font-weight: 900; font-size: 1.5rem; box-shadow: 0 15px 40px rgba(255,0,0,0.3); transition: 0.4s; }
+        .tv-btn:hover { transform: scale(1.05); box-shadow: 0 20px 50px rgba(255,0,0,0.5); }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #111; padding: 40px; border-radius: 40px; width: 100%; max-width: 750px; border: 1px solid var(--gold); max-height: 90vh; overflow-y: auto; }
-        .survey-group { margin-bottom: 25px; border-bottom: 1px solid #222; padding-bottom: 15px; }
-        .survey-group b { display: block; margin-bottom: 12px; color: var(--gold); font-size: 1.1rem; }
-        .opt { display: inline-block; padding: 12px 18px; background: #222; border: 1px solid #333; border-radius: 12px; margin: 0 8px 8px 0; cursor: pointer; color: #fff; }
-        .opt.act { background: var(--gold) !important; color: #000 !important; font-weight: bold; }
-        
-        .post-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; padding: 20px; overflow-y: auto; }
-        .post-inner { max-width: 950px; margin: 40px auto; background: #111; border-radius: 40px; padding: 60px; border: 1px solid #222; color: #eee; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--card-bg); padding: 50px; border-radius: 40px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(212,175,55,0.2); }
+        .opt { display: inline-block; padding: 10px 18px; background: #222; border: 1px solid #333; border-radius: 12px; margin: 0 8px 8px 0; cursor: pointer; font-size: 0.9rem; color: #fff; transition: 0.2s; }
+        .opt.act { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; font-weight: bold; }
+        .submit-btn { background: var(--gold-gradient); color: #000; padding: 22px; width: 100%; border: none; border-radius: 20px; font-weight: 900; font-size: 1.3rem; margin-top: 20px; cursor: pointer; }
+
+        .post-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 3000; padding: 20px; overflow-y: auto; }
+        .post-inner { max-width: 900px; margin: 40px auto; background: #111; border-radius: 40px; border: 1px solid #222; padding: 60px; position: relative; }
+        .post-body img { max-width: 100%; border-radius: 20px; margin: 40px 0; display: block; }
+        .close-post-btn { background: var(--gold); color: #000; border: none; padding: 18px 50px; border-radius: 50px; font-weight: 900; cursor: pointer; margin-top: 50px; display: block; margin-left: auto; }
+
+        footer { padding: 100px 0; text-align: center; color: #444; font-size: 0.9rem; }
     </style>
 </head>
 <body>
     <header><div class="nav-container"><a href="index.html" class="logo" id="mainLogo">FITLUENCER</a><button class="admin-btn" onclick="enterAdmin()">관리자</button></div></header>
-    
+
     <section class="hero" id="mainHero"></section>
-    
-    <section style="background:var(--black); padding:60px 0; text-align:center;">
-        <div class="cta-wrap">
-            <button class="main-cta" onclick="openSurvey()">정밀 혈액분석 신청</button>
-            <button class="event-cta" onclick="document.getElementById('comm').scrollIntoView({behavior:'smooth'})">이벤트 프로모션</button>
+
+    <section class="hero-banners">
+        <div class="container cta-wrap">
+            <button class="main-cta" onclick="openSurvey()">건강 자가진단 신청</button>
+            <button class="sub-cta" onclick="scrollToCommunity()">프로모션 이벤트</button>
         </div>
     </section>
-    
+
     <div class="container">
         <div class="section"><h2 class="section-title">건강재테크</h2><div id="list-건강재테크" class="card-grid"></div></div>
         <div class="section"><h2 class="section-title">핏솔루션</h2><div id="list-핏솔루션" class="card-grid"></div></div>
@@ -62,138 +84,157 @@
     </div>
 
     <section class="footer-promo">
-        <h2 style="color:var(--gold); margin-bottom:40px; font-size:2rem; font-weight:900;">FIT-FLUENCE OFFICIAL</h2>
-        <a href="#" id="link-tv" class="tv-btn" target="_blank">📺 핏플루언서 TV 바로가기</a>
+        <h2 style="color:var(--gold); margin-bottom:40px; font-size:2rem; font-weight:900;">FIT-FLUENCE GROUP</h2>
+        <a href="#" id="link-tv" class="tv-btn" target="_blank">핏플루언서유튜브채널 바로가기</a>
     </section>
 
     <div id="surveyModal" class="modal">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div id="surveyArea"></div>
-            <input type="text" id="uName" style="width:100%; padding:20px; background:#000; border:1px solid #333; color:#fff; border-radius:12px; margin-bottom:10px;" placeholder="성함">
-            <input type="tel" id="uPhone" style="width:100%; padding:20px; background:#000; border:1px solid #333; color:#fff; border-radius:12px; margin-bottom:20px;" placeholder="연락처">
-            <button onclick="submitSurvey()" style="width:100%; padding:25px; background:var(--gold-grad); border:none; border-radius:15px; font-weight:900; font-size:1.4rem; cursor:pointer;">분석 신청 완료</button>
-            <p style="text-align:center; margin-top:25px; color:#555; cursor:pointer;" onclick="document.getElementById('surveyModal').style.display='none'">닫기</p>
+        <div class="modal-content">
+            <div id="dynamicSurvey"></div>
+            <div style="margin-top:25px;"><b style="display:block; margin-bottom:10px; color:var(--gold-light);">기타 상담 내용</b><textarea id="uOther" style="width:100%; padding:15px; background:rgba(255,255,255,0.05); border:1px solid #333; color:#fff; border-radius:12px; font-size:1rem;" rows="3" placeholder="추가로 궁금하신 내용..."></textarea></div>
+            <input type="text" id="uName" style="width:100%; padding:18px; margin-top:15px; background:rgba(0,0,0,0.3); border:1px solid #333; color:#fff; border-radius:12px;" placeholder="성함">
+            <input type="tel" id="uPhone" style="width:100%; padding:18px; margin-top:10px; background:rgba(0,0,0,0.3); border:1px solid #333; color:#fff; border-radius:12px;" placeholder="연락처">
+            <button class="submit-btn" onclick="submitSurvey()">자가진단 신청 완료</button>
+            <p style="text-align:center; margin-top:20px; color:#555; cursor:pointer;" onclick="closeSurvey()">닫기</p>
         </div>
     </div>
 
     <div id="postModal" class="post-modal" onclick="closePost()">
         <div class="post-inner" onclick="event.stopPropagation()">
-            <h2 id="mTitle" style="font-size:2.5rem; color:var(--gold); margin-bottom:30px; font-weight:900;"></h2>
-            <div id="mBody" style="font-size:1.2rem; color:#ddd; line-height:2.1;"></div>
-            <button onclick="closePost()" style="background:var(--gold); padding:15px 50px; border-radius:50px; border:none; font-weight:900; cursor:pointer; margin-top:50px; display:block; margin-left:auto;">목록으로 돌아가기</button>
+            <div id="modalHeader" style="border-bottom:1px solid #333; margin-bottom:40px; padding-bottom:30px;">
+                <p id="modalCate" style="color:var(--gold); font-weight:bold; margin-bottom:10px;"></p>
+                <h2 id="modalTitle" style="font-size:2.5rem; color:var(--gold);"></h2>
+            </div>
+            <div id="modalBody" class="post-body" style="font-size:1.25rem; line-height:2.1; color:#ddd;"></div>
+            <button class="close-post-btn" onclick="closePost()">목록으로 돌아가기</button>
         </div>
     </div>
 
-    <script type="module">
-        import * as firebase from './firebase-logic.js';
+    <script>
+        // 1. Firebase Configuration & Initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
+            authDomain: "fitflunce.firebaseapp.com",
+            projectId: "fitflunce",
+            storageBucket: "fitflunce.firebasestorage.app",
+            messagingSenderId: "186695294427",
+            appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        window.enterAdmin = function() { if (prompt('보안 코드') === "7777") { sessionStorage.setItem('fit_auth', 'true'); location.href = 'admin.html'; } }
-        
-        window.openSurvey = async function() {
+        // 2. Global Functions (Works everywhere)
+        function enterAdmin() {
+            const cfg = JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
+            const input = prompt('보안 코드를 입력하세요.');
+            if (input === cfg.pw || input === "7777") { sessionStorage.setItem('fit_auth', 'true'); location.href = 'admin.html'; }
+        }
+
+        function handleSelect(el) {
+            const parent = el.parentElement;
+            parent.querySelectorAll('.opt').forEach(opt => opt.classList.remove('act'));
+            el.classList.add('act');
+        }
+
+        async function openSurvey() {
             let master = [];
+            try { 
+                const doc = await db.collection('config').doc('surveyMaster').get();
+                if(doc.exists) master = doc.data().items || [];
+            } catch(e) { console.warn("Cloud survey load failed:", e); }
+            
+            if(master.length === 0) master = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
+
+            const container = document.getElementById('dynamicSurvey');
+            container.innerHTML = `<h2 style="color:var(--gold); margin-bottom:30px; text-align:center;">📊 라이프 자가진단</h2>`;
+            master.forEach(topic => {
+                let html = `<div class="survey-group" style="margin-bottom:20px;"><b style="display:block; margin-bottom:10px; color:#ccc;">${topic.t || topic.q}</b>`;
+                (topic.o || "").split(',').forEach(opt => { 
+                    html += `<div class="opt" onclick="handleSelect(this)">${opt.trim()}</div>`; 
+                });
+                container.innerHTML += html + `</div>`;
+            });
+            document.getElementById('surveyModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function submitSurvey() {
+            const n = document.getElementById('uName').value; const p = document.getElementById('uPhone').value;
+            if(!n || !p) return alert('성함과 연락처를 입력해주세요.');
+            const selectedAnswers = Array.from(document.querySelectorAll('.opt.act')).map(el => el.innerText);
+            
             try {
-                master = await firebase.getSurveyMasterItems();
-                if (master.length === 0) throw new Error('No firebase survey master');
+                await db.collection('consults').add({ name: n, phone: p, answers: selectedAnswers, other: document.getElementById('uOther').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('서버로 상담 신청이 접수되었습니다.');
             } catch (e) {
-                console.warn('Using localStorage for survey master:', e);
-                master = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
+                const cs = JSON.parse(localStorage.getItem('fitConsults') || '[]');
+                cs.push({ date: new Date().toLocaleString(), name: n, phone: p, answers: selectedAnswers, other: document.getElementById('uOther').value });
+                localStorage.setItem('fitConsults', JSON.stringify(cs));
+                alert('상담이 접수되었습니다. (로컬)');
+            }
+            closeSurvey();
+        }
+
+        function closeSurvey() { document.getElementById('surveyModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+        async function viewPost(id) {
+            let post = null;
+            try {
+                const doc = await db.collection('posts').doc(id).get();
+                if(doc.exists) post = { id: doc.id, ...doc.data() };
+            } catch(e) {}
+            
+            if(!post) {
+                const posts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+                post = posts.find(p => String(p.id) === String(id));
             }
             
-            let html = `<h2 style="color:var(--gold); margin-bottom:30px; text-align:center; font-weight:900;">📊 정밀 혈액분석 신청</h2>`;
-            master.forEach((s, i) => {
-                html += `<div class="survey-group"><b>${i+1}. ${s.t}</b>`;
-                const options = s.o ? s.o.split(',') : [];
-                options.forEach(opt => { html += `<div class="opt" onclick="sel(this)">${opt.trim()}</div>`; });
-                html += `</div>`;
-            });
-            document.getElementById('surveyArea').innerHTML = html;
-            document.getElementById('surveyModal').style.display = 'flex';
-        }
-        
-        window.sel = function(el) { const p = el.parentElement; p.querySelectorAll('.opt').forEach(o => o.classList.remove('act')); el.classList.add('act'); }
-        
-        window.submitSurvey = async function() {
-            const name = document.getElementById('uName').value;
-            const phone = document.getElementById('uPhone').value;
-            if(!name || !phone) return alert('성함과 연락처를 입력해주세요.');
-
-            const groups = document.querySelectorAll('.survey-group');
-            const answers = [];
-            let allSelected = true;
-            groups.forEach(g => {
-                const q = g.querySelector('b').innerText;
-                const act = g.querySelector('.opt.act');
-                if(act) answers.push(`${q}: ${act.innerText}`);
-                else allSelected = false;
-            });
-
-            if(!allSelected) {
-                if(!confirm('선택하지 않은 항목이 있습니다. 그대로 제출할까요?')) return;
-            }
-
-            try {
-                await firebase.submitSurvey(name, phone, answers);
-            } catch (e) {
-                console.warn('Falling back to localStorage for survey submission:', e);
-                const cs = JSON.parse(localStorage.getItem('fitConsults') || '[]');
-                cs.push({ date: new Date().toLocaleString(), name, phone, answers });
-                localStorage.setItem('fitConsults', JSON.stringify(cs));
-            }
-
-            alert('정상 접수되었습니다! 곧 연락드리겠습니다.');
-            document.getElementById('surveyModal').style.display='none';
-            document.getElementById('uName').value = "";
-            document.getElementById('uPhone').value = "";
-            document.querySelectorAll('.opt').forEach(o => o.classList.remove('act'));
-        }
-        
-        window.closePost = function() { document.getElementById('postModal').style.display = 'none'; document.body.style.overflow='auto'; }
-
-        window.viewPost = async function(id) {
-            let ps = [];
-            try {
-                ps = await firebase.getPosts();
-            } catch (e) {
-                ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-            }
-            const p = ps.find(x => String(x.id) === String(id));
-            if(!p) return;
-            document.getElementById('mTitle').innerText = p.title;
-            document.getElementById('mBody').innerHTML = p.content;
+            if(!post) return;
+            document.getElementById('modalCate').innerText = post.category;
+            document.getElementById('modalTitle').innerText = post.title;
+            document.getElementById('modalBody').innerHTML = post.content;
             document.getElementById('postModal').style.display = 'block';
-            document.body.style.overflow='hidden';
+            document.body.style.overflow = 'hidden';
         }
+
+        function closePost() { document.getElementById('postModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        function scrollToCommunity() { const comm = document.getElementById('comm'); if(comm) comm.scrollIntoView({ behavior: 'smooth' }); }
 
         window.onload = async function() {
+            // 1. Load Config (Cloud first, then Local)
             let cfg = {};
-            try {
-                cfg = await firebase.getConfig() || {};
-            } catch (e) {
-                cfg = JSON.parse(localStorage.getItem('fitConfig') || '{}');
-            }
+            try { 
+                const doc = await db.collection('config').doc('site').get();
+                if(doc.exists) cfg = doc.data();
+            } catch(e) {}
+            if(!cfg.logo) cfg = JSON.parse(localStorage.getItem('fitConfig') || '{}');
             
             if(cfg.logo) document.getElementById('mainLogo').innerText = cfg.logo;
             if(cfg.img) document.getElementById('mainHero').style.backgroundImage = `url(${cfg.img})`;
-            else document.getElementById('mainHero').style.backgroundImage = "url('핏플루언서그룹로그11.jpg')";
             if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
-
-            let ps = [];
+            
+            // 2. Load Posts (Hybrid Cloud + Local)
+            let allPosts = [];
             try {
-                ps = await firebase.getPosts();
-                if (ps.length === 0) throw new Error('No firebase posts');
-            } catch (e) {
-                console.warn('Using localStorage for posts:', e);
-                ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-            }
+                const snap = await db.collection('posts').orderBy('createdAt', 'desc').get();
+                snap.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
+            } catch(e) {}
+            
+            const localPosts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+            localPosts.forEach(lp => {
+                if(!allPosts.find(cp => String(cp.id) === String(lp.id))) allPosts.push(lp);
+            });
 
             ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {
                 const el = document.getElementById(`list-${c}`);
-                const filtered = ps.filter(p => p.category === c);
-                el.innerHTML = filtered.length ? filtered.reverse().map(p => `
-                    <div class="card" onclick="viewPost('${p.id}')">
-                        <img src="${p.image || '핏플루언서그룹로그11.jpg'}" class="card-img">
-                        <div class="card-body"><h3>${p.title}</h3><p style="color:#666;">${p.date || new Date(p.createdAt?.seconds * 1000).toLocaleDateString()}</p></div>
-                    </div>`).join('') : '<p style="color:#444; padding:20px;">준비 중입니다.</p>';
+                const filtered = allPosts.filter(p => p.category === c);
+                if(filtered.length) {
+                    el.innerHTML = filtered.map(p => `
+                        <div class="card" onclick="viewPost('${p.id}')">
+                            <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
+                            <div class="card-body"><h3>${p.title}</h3><p>${p.date || ""}</p></div>
+                        </div>`).join('');
+                } else { el.innerHTML = '<p style="color:#333; padding:20px;">콘텐츠 준비 중</p>'; }
             });
         };
     </script>

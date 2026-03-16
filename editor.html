@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>FIT-FLUENCE 프리미엄 에디터</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <!-- Firebase SDK (Compat Mode) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
@@ -20,21 +19,22 @@
 
         .library-area { background: #1a1a1a; padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #333; }
         .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-        .img-item { background: #000; border-radius: 15px; overflow: hidden; border: 1px solid #444; display: flex; flex-direction: column; }
+        .img-item { background: #000; border-radius: 15px; overflow: hidden; border: 1px solid #444; display: flex; flex-direction: column; position: relative; }
         .img-item img { width: 100%; height: 120px; object-fit: cover; }
         .insert-btn { background: var(--gold); color: #000; border: none; padding: 10px; font-weight: 900; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .insert-btn:hover { background: #fff; }
+        .del-img-btn { position: absolute; top: 5px; right: 5px; background: rgba(255,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 10; }
 
         .toolbar { background: #1a1a1a; padding: 15px; border-radius: 15px 15px 0 0; border: 1px solid #333; border-bottom: none; display: flex; gap: 10px; align-items: center; }
         .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
         #pContent { width: 100%; min-height: 500px; padding: 30px; background: #000; border: 1px solid #333; border-radius: 0 0 15px 15px; color: #fff; overflow-y: auto; font-size: 1.1rem; line-height: 1.8; outline: none; }
         #pContent img { max-width: 100%; border-radius: 12px; margin: 25px 0; display: block; }
+        #pContent a { color: var(--gold); text-decoration: underline; }
 
         .btn-wrap { margin-top: 50px; text-align: center; display: flex; gap: 20px; justify-content: center; }
         .publish-btn { background: var(--gold); color: #000; border: none; padding: 22px 80px; border-radius: 100px; font-size: 1.3rem; font-weight: 900; cursor: pointer; transition: 0.3s; }
         .publish-btn:hover { transform: scale(1.03); background: #f2e3b1; }
-        .publish-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
         .cancel-btn { background: #222; color: #888; border: 1px solid #333; padding: 22px 40px; border-radius: 100px; cursor: pointer; }
         
         #statusInfo { display: none; color: var(--gold); font-size: 0.9rem; margin-bottom: 10px; text-align: center; background: rgba(212,175,55,0.1); padding: 8px; border-radius: 8px; }
@@ -72,7 +72,6 @@
     </div>
 
     <script>
-        // 1. Firebase Initialize
         const firebaseConfig = {
             apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
             authDomain: "fitflunce.firebaseapp.com",
@@ -86,55 +85,37 @@
         const storage = firebase.storage();
 
         let mainThumb = ""; 
-        let editId = new URLSearchParams(location.search).get('id'); // 주소창에서 ID 가져오기
+        let editId = new URLSearchParams(location.search).get('id');
 
-        // 페이지 로드 시 수정 모드 확인
         window.onload = async function() {
             if (editId) {
                 document.getElementById('editorTitle').innerText = "🖋️ 게시글 수정하기";
                 document.getElementById('saveBtn').innerText = "수정 완료 (저장)";
-                
-                try {
-                    const doc = await db.collection('posts').doc(editId).get();
-                    if (doc.exists) {
-                        const data = doc.data();
-                        document.getElementById('pTitle').value = data.title;
-                        document.getElementById('pCategory').value = data.category;
-                        document.getElementById('pContent').innerHTML = data.content;
-                        mainThumb = data.image;
-                        if(mainThumb) addImgToGrid(mainThumb);
-                    } else {
-                        // 서버에 없으면 로컬에서 찾기
-                        const ps = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-                        const p = ps.find(x => String(x.id) === String(editId));
-                        if(p) {
-                            document.getElementById('pTitle').value = p.title;
-                            document.getElementById('pCategory').value = p.category;
-                            document.getElementById('pContent').innerHTML = p.content;
-                            mainThumb = p.image;
-                            if(mainThumb) addImgToGrid(mainThumb);
-                        }
-                    }
-                } catch(e) { console.error("Load error:", e); }
+                const doc = await db.collection('posts').doc(editId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('pTitle').value = data.title;
+                    document.getElementById('pCategory').value = data.category;
+                    document.getElementById('pContent').innerHTML = data.content;
+                    mainThumb = data.image;
+                    if(mainThumb) addImgToGrid(mainThumb);
+                }
             }
         };
 
         window.processImgs = async function(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
-
-            const info = document.getElementById('statusInfo');
-            info.style.display = 'block';
-
+            document.getElementById('statusInfo').style.display = 'block';
             for (const file of files) {
                 try {
-                    const dataUrl = await resizeImg(file, 800, 0.5);
+                    const dataUrl = await resizeImg(file, 800, 0.6);
                     addImgToGrid(dataUrl);
                     if(!mainThumb) mainThumb = dataUrl;
                     uploadInBackground(file.name, dataUrl);
                 } catch (err) { console.error(err); }
             }
-            info.style.display = 'none';
+            document.getElementById('statusInfo').style.display = 'none';
             input.value = "";
         }
 
@@ -144,7 +125,7 @@
                 const snap = await ref.putString(dataUrl, 'data_url');
                 const serverUrl = await snap.ref.getDownloadURL();
                 if(mainThumb === dataUrl) mainThumb = serverUrl;
-            } catch (e) { console.warn("Cloud upload failed."); }
+            } catch (e) {}
         }
 
         function resizeImg(file, maxW, quality) {
@@ -157,7 +138,8 @@
                         let w = img.width, h = img.height;
                         if(w > maxW) { h = h * (maxW/w); w = maxW; }
                         canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
                         resolve(canvas.toDataURL('image/jpeg', quality));
                     };
                     img.src = e.target.result;
@@ -169,14 +151,11 @@
         function addImgToGrid(src) {
             const div = document.createElement('div');
             div.className = 'img-item';
-            const btn = document.createElement('button');
-            btn.className = 'insert-btn';
-            btn.innerText = '본문 삽입';
-            btn.onclick = function() { window.insertBody(src); };
-            const img = document.createElement('img');
-            img.src = src;
-            div.appendChild(img);
-            div.appendChild(btn);
+            div.innerHTML = `
+                <button class="del-img-btn" onclick="this.parentElement.remove()">X</button>
+                <img src="${src}">
+                <button class="insert-btn" onclick="window.insertBody('${src}')">본문 삽입</button>
+            `;
             document.getElementById('imgGrid').appendChild(div);
         }
 
@@ -186,48 +165,43 @@
             document.execCommand('insertHTML', false, tag + '<br>');
         }
 
-        window.execCmd = function(cmd, val=null) { document.execCommand(cmd, false, val); document.getElementById('pContent').focus(); }
-        window.insertLink = function() { const url = prompt("링크 주소:"); if(url) window.execCmd('createLink', url); }
+        window.execCmd = function(cmd, val=null) { 
+            document.execCommand(cmd, false, val); 
+            document.getElementById('pContent').focus(); 
+        }
+        
+        window.insertLink = function() { 
+            const url = prompt("링크 주소 (http:// 포함):"); 
+            if(url) {
+                document.getElementById('pContent').focus();
+                document.execCommand('createLink', false, url);
+            }
+        }
 
         window.savePost = async function() {
             const title = document.getElementById('pTitle').value;
             const content = document.getElementById('pContent').innerHTML;
             if(!title || !content.trim()) return alert('제목과 내용을 입력하세요!');
 
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerText = "저장 중...";
-            saveBtn.disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('saveBtn').innerText = "저장 중...";
 
             const postData = {
-                title: title,
-                category: document.getElementById('pCategory').value,
-                content: content,
-                image: mainThumb,
-                date: new Date().toLocaleDateString(),
+                title: title, category: document.getElementById('pCategory').value, content: content,
+                image: mainThumb, date: new Date().toLocaleDateString(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if(!editId) postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
 
             try {
-                if (editId) {
-                    await db.collection('posts').doc(editId).update(postData);
-                } else {
-                    await db.collection('posts').add(postData);
-                }
-                alert('성공적으로 반영되었습니다!');
+                if (editId) { await db.collection('posts').doc(editId).update(postData); } 
+                else { await db.collection('posts').add(postData); }
+                alert('반영되었습니다!');
                 location.href = 'admin.html';
             } catch(e) {
-                // 실패 시 로컬 저장 처리
-                const posts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-                if (editId) {
-                    const idx = posts.findIndex(x => String(x.id) === String(editId));
-                    if(idx > -1) posts[idx] = { id: editId, ...postData };
-                } else {
-                    posts.push({ id: Date.now().toString(), ...postData });
-                }
-                localStorage.setItem('fitPosts', JSON.stringify(posts));
-                alert('서버 연결 실패로 로컬에 저장되었습니다.');
-                location.href = 'admin.html';
+                alert('저장 실패: ' + e.message);
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('saveBtn').innerText = "발행하기";
             }
         }
     </script>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FIT-FLUENCE GROUP v1.2</title>
+    <title>FIT-FLUENCE GROUP v1.3</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -17,7 +17,7 @@
         .logo { font-size: 1.3rem; font-weight: 900; color: var(--gold); text-decoration: none; }
         .admin-btn { background: transparent; color: var(--gold); padding: 6px 15px; border-radius: 30px; font-weight: 600; border: 1px solid var(--gold); cursor: pointer; font-size: 0.75rem; }
 
-        .hero { height: 65vh; display: flex; align-items: center; justify-content: center; position: relative; background: #111 center/cover no-repeat; }
+        .hero { height: 65vh; display: flex; align-items: center; justify-content: center; position: relative; background: #111 center/cover no-repeat; transition: background 0.5s ease; }
         .hero::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); }
 
         .hero-banners { background: var(--black); padding: 40px 0; text-align: center; }
@@ -37,8 +37,7 @@
         .footer-promo { background: #000; padding: 80px 20px; text-align: center; }
         .tv-btn { display: inline-flex; align-items: center; justify-content: center; padding: 22px 0; width: 100%; max-width: 350px; border-radius: 60px; background: #ff0000; color: #fff; text-decoration: none; font-weight: 900; font-size: 1.2rem; }
 
-        /* 혈액검사 분석 신청 모달 (휴대폰 최적화) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 10px; }
         .modal-content { background: #111; padding: 30px 20px; border-radius: 25px; width: 95%; max-width: 550px; border: 1px solid var(--gold); margin: 20px auto; }
         .survey-group { margin-bottom: 25px; border-bottom: 1px solid #222; padding-bottom: 15px; }
         .survey-group b { display: block; margin-bottom: 15px; color: var(--gold); font-size: 1.1rem; }
@@ -46,7 +45,6 @@
         .opt.act { background: var(--gold) !important; color: #000 !important; font-weight: bold; }
         .submit-btn { background: var(--gold-gradient); color: #000; padding: 22px; width: 100%; border: none; border-radius: 15px; font-weight: 900; font-size: 1.3rem; margin-top: 30px; cursor: pointer; }
 
-        /* 게시글 상세보기 모달 */
         .post-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 3000; padding: 15px; overflow-y: auto; }
         .post-inner { max-width: 850px; margin: 20px auto; background: #111; border-radius: 25px; border: 1px solid #222; padding: 25px; }
         .post-body img { max-width: 100%; border-radius: 15px; margin: 20px 0; display: block; }
@@ -85,7 +83,6 @@
         <a href="https://youtube.com/@fitfluence" id="link-tv" class="tv-btn" target="_blank">핏플루언서유튜브채널</a>
     </section>
 
-    <!-- 설문 모달 -->
     <div id="surveyModal" class="modal">
         <div class="modal-content">
             <div id="dynamicSurvey"></div>
@@ -97,7 +94,6 @@
         </div>
     </div>
 
-    <!-- 게시글 모달 -->
     <div id="postModal" class="post-modal">
         <div class="post-inner" onclick="event.stopPropagation()">
             <div id="modalHeader" style="border-bottom:1px solid #333; margin-bottom:30px; padding-bottom:20px;">
@@ -130,6 +126,7 @@
         function renderPosts(localPosts, cloudPosts) {
             const combined = [...cloudPosts];
             localPosts.forEach(lp => { if(!combined.find(cp => String(cp.id) === String(lp.id))) combined.push(lp); });
+            // sortIndex 기준 정렬
             combined.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
 
             ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(function(c) {
@@ -200,7 +197,10 @@
                 if(doc.exists) {
                     var c = doc.data();
                     if(c.logo) document.getElementById('mainLogo').innerText = c.logo;
-                    if(c.img) document.getElementById('mainHero').style.backgroundImage = `url(${c.img})`;
+                    if(c.img) {
+                        document.getElementById('mainHero').style.backgroundImage = `url(${c.img})`;
+                        document.getElementById('mainHero').style.backgroundSize = "cover";
+                    }
                     if(c.bannerLink) document.getElementById('link-tv').href = c.bannerLink;
                 }
                 var snap = await db.collection('posts').get();

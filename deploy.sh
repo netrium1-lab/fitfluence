@@ -21,4 +21,4 @@ echo "🌐 Firebase 사이트를 업데이트합니다..."
 firebase deploy
 
 echo "✅ 모든 작업이 완료되었습니다!"
-echo "🔗 배포된 사이트: https://fitflunce.web.app"
+echo "🔗 배포된 사이트: https://9000-firebase-fitfluence-1773480657966.cluster-y75up3teuvc62qmnwys4deqv6y.cloudworkstations.dev/"

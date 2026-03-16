@@ -387,7 +387,44 @@
         }
         
         window.backup = function() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(localStorage)], {type:'application/json'})); a.download = 'FIT_BACKUP.json'; a.click(); }
-        window.restore = function(i) { const reader = new FileReader(); reader.onload = e => { const data = JSON.parse(e.target.result); Object.keys(data).forEach(k => localStorage.setItem(k, data[k])); alert('복구 완료!'); location.reload(); }; reader.readAsText(i.files[0]); }
+        
+        window.restore = function(i) {
+            const reader = new FileReader();
+            reader.onload = async e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // 1. 로컬 저장소 복구
+                    Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                    
+                    if(confirm('데이터를 클라우드(Firebase)에도 즉시 동기화할까요?')) {
+                        console.log("Syncing to Firebase...");
+                        
+                        // 2. Firebase 동기화 (설정)
+                        if(data.fitConfig) await firebase.updateConfig(JSON.parse(data.fitConfig));
+                        
+                        // 3. Firebase 동기화 (설문 항목)
+                        if(data.fitSurveyMaster) await firebase.updateSurveyMaster(JSON.parse(data.fitSurveyMaster));
+                        
+                        // 4. Firebase 동기화 (게시글)
+                        if(data.fitPosts) {
+                            const ps = JSON.parse(data.fitPosts);
+                            for(const p of ps) {
+                                await firebase.savePost(p.id, p);
+                            }
+                        }
+                        alert('클라우드 동기화까지 모두 완료되었습니다!');
+                    } else {
+                        alert('로컬 복구만 완료되었습니다. (새로고침 후 반영)');
+                    }
+                    location.reload();
+                } catch (err) {
+                    console.error("Restore error:", err);
+                    alert('복구 중 오류가 발생했습니다: ' + err.message);
+                }
+            };
+            reader.readAsText(i.files[0]);
+        }
 
         window.onload = async function() {
             let cfg = {};

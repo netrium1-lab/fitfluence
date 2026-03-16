@@ -126,14 +126,28 @@
     <script type="module">
         import * as firebase from './firebase-logic.js';
 
+        console.log("Firebase logic initialized");
+
         // Check authentication
         firebase.onAuth((user) => {
+            console.log("Auth state changed:", user ? "User logged in" : "User not logged in");
             if (!user) {
                 document.getElementById('loginModal').style.display = 'flex';
-                document.querySelector('.container').style.display = 'none';
+                const container = document.querySelector('.container');
+                const sidebar = document.querySelector('.sidebar');
+                const main = document.querySelector('.main');
+                if(container) container.style.display = 'none';
+                if(sidebar) sidebar.style.display = 'none';
+                if(main) main.style.display = 'none';
             } else {
                 document.getElementById('loginModal').style.display = 'none';
-                document.querySelector('.container').style.display = 'block';
+                const container = document.querySelector('.container');
+                const sidebar = document.querySelector('.sidebar');
+                const main = document.querySelector('.main');
+                if(container) container.style.display = 'block';
+                if(sidebar) sidebar.style.display = 'flex';
+                if(main) main.style.display = 'block';
+                console.log("Calling renderAll...");
                 renderAll();
             }
         });
@@ -141,10 +155,13 @@
         window.handleLogin = async function() {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
+            console.log("Attempting login for:", email);
             try {
                 await firebase.login(email, pass);
+                console.log("Login successful");
             } catch (e) {
-                document.getElementById('loginError').innerText = "로그인 실패: 이메일 또는 비밀번호를 확인하세요.";
+                console.error("Login error:", e);
+                document.getElementById('loginError').innerText = "로그인 실패: " + e.message;
             }
         }
 

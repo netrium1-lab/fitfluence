@@ -26,7 +26,10 @@
         th, td { padding: 18px; border-bottom: 1px solid #eee; text-align: left; }
         #preview { width: 100%; height: 200px; background: #eee; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
-        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        
+        #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid var(--gold); width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body id="adminBody" style="display:none;">
@@ -77,7 +80,7 @@
         <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><button onclick="downloadExcel()" style="background:#1D6F42; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-bottom:15px;">📊 엑셀 다운로드</button><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
     </div>
 
-    <div id="statusOverlay"><h2 id="statusMsg">서버 처리 중...</h2><p>잠시만 기다려주세요.</p></div>
+    <div id="statusOverlay"><div class="spinner"></div><h2 id="statusMsg">서버 처리 중...</h2><p id="statusSub">잠시만 기다려주세요.</p></div>
 
     <script>
         const firebaseConfig = {
@@ -95,7 +98,11 @@
         if (sessionStorage.getItem('fit_auth') !== 'true') { location.href = 'index.html'; }
         else { document.getElementById('adminBody').style.display = 'flex'; }
 
-        function showStatus(msg) { document.getElementById('statusOverlay').style.display = 'flex'; document.getElementById('statusMsg').innerText = msg; }
+        function showStatus(msg, sub = "잠시만 기다려주세요.") { 
+            document.getElementById('statusOverlay').style.display = 'flex'; 
+            document.getElementById('statusMsg').innerText = msg; 
+            document.getElementById('statusSub').innerText = sub;
+        }
         function hideStatus() { document.getElementById('statusOverlay').style.display = 'none'; }
 
         function showTab(id, el) {
@@ -105,54 +112,46 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        function compressImg(file, maxW, quality) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let w = img.width, h = img.height;
-                        if(w > maxW) { h = h * (maxW/w); w = maxW; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        let pickedImgUrl = "";
-        window.pickHero = async function(input) {
-            if(input.files[0]) {
+        async function pickHero(i) {
+            if(i.files[0]) {
                 showStatus("이미지 최적화 중...");
-                try {
-                    const compressedData = await compressImg(input.files[0], 1200, 0.6);
-                    showStatus("이미지 업로드 중...");
+                const reader = new FileReader();
+                reader.onload = async e => {
+                    showStatus("이미지 전송 중...", "0%");
                     const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
-                    const snap = await ref.putString(compressedData, 'data_url');
-                    pickedImgUrl = await snap.ref.getDownloadURL();
-                    document.getElementById('preview').innerHTML = `<img src="${pickedImgUrl}">`;
-                } catch(e) { alert("이미지 처리 실패"); }
-                hideStatus();
+                    const uploadTask = ref.putString(e.target.result, 'data_url');
+                    uploadTask.on('state_changed', 
+                        snap => {
+                            const prog = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                            showStatus("이미지 전송 중...", prog + "% 완료");
+                        },
+                        err => { alert("업로드 실패"); hideStatus(); },
+                        async () => {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            document.getElementById('preview').innerHTML = `<img src="${url}">`;
+                            hideStatus();
+                            alert("배경 업로드 성공! 반드시 '모든 설정 서버 저장' 버튼을 눌러주세요.");
+                        }
+                    );
+                };
+                reader.readAsDataURL(i.files[0]);
             }
         }
+        window.pickHero = pickHero;
 
         async function saveDesign() {
-            showStatus("저장 중...");
+            showStatus("설정 정보 저장 중...");
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
                 bannerLink: document.getElementById('bannerLink').value,
                 logo: document.getElementById('siteLogo').value,
-                img: pickedImgUrl || (document.querySelector('#preview img')?.src) || ""
+                img: document.querySelector('#preview img')?.src || ""
             };
             try {
                 await db.collection('config').doc('site').set(cfg);
                 localStorage.setItem('fitConfig', JSON.stringify(cfg));
                 alert('완료!');
-            } catch(e) { alert("오류: " + e.message); }
+            } catch(e) { alert("저장 실패: " + e.message); }
             hideStatus();
         }
 
@@ -202,56 +201,42 @@
 
         function backupData() { const d = { config: localStorage.getItem('fitConfig'), posts: localStorage.getItem('fitPosts'), survey: localStorage.getItem('fitSurveyMaster'), consults: localStorage.getItem('fitConsults') }; const b = new Blob([JSON.stringify(d)], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `FIT_BACKUP.json`; l.click(); }
 
-        // [최종 해결] 대용량 이미지 처리 기능이 포함된 복구 로직
         async function restoreData(input) {
             if(!input.files[0]) return;
             const reader = new FileReader();
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
-                if(confirm('서버 복구를 시작할까요? (용량이 큰 사진은 자동 처리됩니다)')) {
+                if(confirm('서버 복구를 시작할까요?')) {
                     showStatus("데이터 분석 중...");
                     try {
-                        // 1. Config 복구 (이미지가 크면 Storage로 우회)
                         if(data.config) {
                             let cfg = JSON.parse(data.config);
-                            if(cfg.img && cfg.img.startsWith('data:') && cfg.img.length > 800000) {
-                                showStatus("배경 이미지 대용량 처리 중...");
+                            if(cfg.img && cfg.img.startsWith('data:') && cfg.img.length > 500000) {
+                                showStatus("배경 이미지 전송 중...", "용량이 큽니다. 잠시만 기다려주세요.");
                                 const ref = storage.ref().child(`config/restored_hero.jpg`);
-                                const snap = await ref.putString(cfg.img, 'data_url');
-                                cfg.img = await snap.ref.getDownloadURL();
+                                await ref.putString(cfg.img, 'data_url');
+                                cfg.img = await ref.getDownloadURL();
                             }
                             await db.collection('config').doc('site').set(cfg);
                         }
-                        
-                        // 2. Survey 복구
-                        if(data.survey) {
-                            const s = JSON.parse(data.survey);
-                            await db.collection('config').doc('surveyMaster').set({ items: s });
-                        }
-                        
-                        // 3. Posts 복구 (이미지가 크면 Storage로 우회)
+                        if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
                         if(data.posts) {
                             const ps = JSON.parse(data.posts);
                             for(let i=0; i<ps.length; i++) {
-                                showStatus(`게시글 복구 중 (${i+1}/${ps.length})`);
-                                let post = ps[i];
-                                if(post.image && post.image.startsWith('data:') && post.image.length > 800000) {
+                                showStatus(`게시글 복구 중 (${i+1}/${ps.length})`, "이미지 포함 시 시간이 걸립니다.");
+                                let p = ps[i];
+                                if(p.image && p.image.startsWith('data:') && p.image.length > 500000) {
                                     try {
                                         const ref = storage.ref().child(`posts/restored_${Date.now()}_${i}.jpg`);
-                                        const snap = await ref.putString(post.image, 'data_url');
-                                        post.image = await snap.ref.getDownloadURL();
-                                    } catch(err) { post.image = ""; } // 업로드 실패 시 이미지만 비움
+                                        await ref.putString(p.image, 'data_url');
+                                        p.image = await ref.getDownloadURL();
+                                    } catch(err) { p.image = ""; }
                                 }
-                                await db.collection('posts').doc(String(post.id)).set({
-                                    ...post, 
-                                    sortIndex: i,
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                                });
+                                await db.collection('posts').doc(String(p.id)).set({ ...p, sortIndex: i });
                             }
                         }
-                        alert('서버 복구가 성공적으로 완료되었습니다!');
-                        location.reload();
-                    } catch(err) { alert("복구 실패: " + err.message); }
+                        alert('서버 복구 완료!'); location.reload();
+                    } catch(err) { alert(err.message); }
                     hideStatus();
                 }
             };

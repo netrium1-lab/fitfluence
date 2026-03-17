@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // 누구나 읽을 수 있게 허용 (홈페이지에 사진이 보여야 하므로)
+      allow read: if true;
+      // 보안을 위해 파일 크기 5MB 이하만 업로드 허용 (사이트 부하 방지)
+      allow write: if request.resource.size < 5 * 1024 * 1024;
+    }
+  }
+}

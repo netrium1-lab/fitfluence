@@ -201,7 +201,7 @@
 
                 ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {
                     const el = document.getElementById('list-' + c);
-                    const filtered = ps.filter(p => p.category === c);
+                const filtered = ps.filter(p => p.category === c);
                     if(filtered.length) {
                         el.innerHTML = filtered.map(p => `
                             <div class="card" onclick="viewPost('${p.id}')">

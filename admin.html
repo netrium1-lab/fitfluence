@@ -22,6 +22,8 @@
         input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; }
         .btn { background: var(--gold); color: #fff; border: none; padding: 18px; border-radius: 15px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 1.1rem; }
         .btn-sub { background: #333; color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; font-weight: bold; font-size: 0.9rem; }
+        .btn-mini { background: #eee; color: #666; border: 1px solid #ddd; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-mini.active { background: var(--gold); color: #fff; border-color: var(--gold); }
         table { width: 100%; border-collapse: collapse; margin-top: 25px; }
         th, td { padding: 18px; border-bottom: 1px solid #eee; text-align: left; }
         #preview { width: 100%; height: 200px; background: #eee; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
@@ -54,12 +56,25 @@
                     </div>
                 </div>
                 <div class="form-group"><label>🔗 유튜브 배너 링크</label><input type="text" id="bannerLink"></div>
-                <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>play:none" onchange="window.pickHero(this)" accept="image/*"></div>
-조심                <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">이미지 선택</div><input type="file" id="fIn" style="dis                <button class="btn" onclick="saveDesign()">모든 설정 서버 저장하기</button>
+                <div class="form-group"><label>로고 이름</label><input type="text" id="siteLogo"></div>
+                <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
+                <button class="btn" onclick="saveDesign()">모든 설정 서버 저장하기</button>
             </div>
         </div>
 
-        <div id="posts" class="tab"><div class="card"><h1>📝 게시글 관리</h1><button class="btn" style="width:auto; padding:10px 30px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button><table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table></div></div>
+        <div id="posts" class="tab">
+            <div class="card">
+                <h1>📝 게시글 관리</h1>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div>
+                        <button id="btn-pub" class="btn-mini active" onclick="switchPostView('published')">정식 발행 글</button>
+                        <button id="btn-draft" class="btn-mini" onclick="switchPostView('draft')">임시저장함</button>
+                    </div>
+                    <button class="btn" style="width:auto; padding:10px 30px; margin:0;" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
+                </div>
+                <table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table>
+            </div>
+        </div>
 
         <div id="survey" class="tab">
             <div class="card">
@@ -74,7 +89,7 @@
             </div>
         </div>
 
-        <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><button onclick="downloadExcel()" style="background:#1D6F42; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-bottom:15px;">📊 엑셀 다운로드</button><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
+        <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
     </div>
 
     <div id="statusOverlay"><h2 id="statusMsg">서버 처리 중...</h2><p id="statusSub">창을 닫지 마세요.</p></div>
@@ -107,28 +122,17 @@
         async function pickHero(i) {
             if(!i.files[0]) return;
             const file = i.files[0];
-            
-            // 파일 크기 체크 (800KB 제한)
-            if (file.size > 800 * 1024) {
-                alert("이미지 용량이 너무 큽니다. (800KB 이하의 이미지를 사용해주세요)");
-                return;
-            }
-
+            if (file.size > 800 * 1024) { alert("이미지 용량이 너무 큽니다. (800KB 이하)"); return; }
             const reader = new FileReader();
-            showStatus("이미지 처리 중...", "데이터베이스 저장 방식을 준비합니다.");
-            
+            showStatus("이미지 처리 중...");
             reader.onload = async (e) => {
                 try {
                     const base64Data = e.target.result;
                     document.getElementById('preview').innerHTML = `<img src="${base64Data}">`;
                     hideStatus();
-                    // 즉시 저장
                     await saveDesign();
-                    alert("메인 배경 이미지가 즉시 저장되었습니다!");
-                } catch (err) {
-                    alert("처리 오류: " + err.message);
-                    hideStatus();
-                }
+                    alert("메인 배경 이미지가 저장되었습니다!");
+                } catch (err) { alert("처리 오류: " + err.message); hideStatus(); }
             };
             reader.readAsDataURL(file);
         }
@@ -145,59 +149,77 @@
             };
             try {
                 await db.collection('config').doc('site').set(cfg, {merge: true});
-                localStorage.setItem('fitConfig', JSON.stringify(cfg));
             } catch(e) { alert("서버 저장 오류: " + e.message); }
             hideStatus();
         }
 
         let globalPosts = [];
+        let currentPostView = 'published';
+
+        function switchPostView(status) {
+            currentPostView = status;
+            document.getElementById('btn-pub').classList.toggle('active', status === 'published');
+            document.getElementById('btn-draft').classList.toggle('active', status === 'draft');
+            renderPostTable();
+        }
+
         async function loadP() {
+            showStatus("게시글 불러오는 중...");
             const snap = await db.collection('posts').get();
             globalPosts = []; snap.forEach(d => { var data = d.data(); data.id = d.id; globalPosts.push(data); });
             globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
             renderPostTable();
+            hideStatus();
         }
 
         function renderPostTable() {
-            document.getElementById('pTable').innerHTML = globalPosts.map((p, i) => `
+            const filtered = globalPosts.filter(p => {
+                const status = p.status || 'published';
+                return status === currentPostView;
+            });
+
+            document.getElementById('pTable').innerHTML = filtered.map((p, i) => `
                 <tr>
                     <td>
                         <button class="move-btn" onclick="movePost(${i}, -1)">▲</button><br>
                         <button class="move-btn" onclick="movePost(${i}, 1)">▼</button>
                     </td>
                     <td>${p.category}</td>
-                    <td><b>${p.title}</b></td>
+                    <td><b>${p.title}</b> ${p.status === 'draft' ? '<span style="color:red;font-size:0.7rem;">[임시]</span>' : ''}</td>
                     <td>
                         <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;font-weight:bold;cursor:pointer;">수정</button>
                         <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;font-weight:bold;cursor:pointer;margin-left:10px;">삭제</button>
                     </td>
                 </tr>`).join('');
+            
+            if(filtered.length === 0) {
+                document.getElementById('pTable').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">작성된 글이 없습니다.</td></tr>';
+            }
         }
 
         async function movePost(idx, dir) {
+            const filtered = globalPosts.filter(p => (p.status || 'published') === currentPostView);
             const newIdx = idx + dir;
-            if(newIdx < 0 || newIdx >= globalPosts.length) return;
+            if(newIdx < 0 || newIdx >= filtered.length) return;
             
             showStatus("순서 변경 중...");
-            const temp = globalPosts[idx]; 
-            globalPosts[idx] = globalPosts[newIdx]; 
-            globalPosts[newIdx] = temp;
+            // 전체 목록에서 실제 인덱스 찾기
+            const realIdx1 = globalPosts.indexOf(filtered[idx]);
+            const realIdx2 = globalPosts.indexOf(filtered[newIdx]);
+            
+            const temp = globalPosts[realIdx1];
+            globalPosts[realIdx1] = globalPosts[realIdx2];
+            globalPosts[realIdx2] = temp;
             
             renderPostTable();
             
             try {
                 const batch = db.batch();
                 globalPosts.forEach((post, i) => {
-                    if(post.id && post.id.length > 5) {
-                        const ref = db.collection('posts').doc(post.id);
-                        batch.update(ref, { sortIndex: i });
-                    }
+                    batch.update(db.collection('posts').doc(post.id), { sortIndex: i });
                 });
                 await batch.commit();
-            } catch(e) { 
-                alert("순서 저장 실패: " + e.message); 
-                loadP(); // 실패 시 데이터 재로드
-            }
+            } catch(e) { alert("순서 저장 실패"); loadP(); }
             hideStatus();
         }
 
@@ -207,7 +229,7 @@
                 try {
                     await db.collection('posts').doc(id).delete(); 
                     await loadP(); 
-                } catch(e) { alert("삭제 실패: " + e.message); }
+                } catch(e) { alert("삭제 실패"); }
                 hideStatus();
             } 
         }
@@ -220,14 +242,13 @@
             let s = doc.exists ? doc.data().items : [];
             if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; } else { s.push({t, o}); }
             await db.collection('config').doc('surveyMaster').set({ items: s });
-            localStorage.setItem('fitSurveyMaster', JSON.stringify(s));
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             renderTopics();
         }
 
         async function renderTopics() {
             const doc = await db.collection('config').doc('surveyMaster').get();
-            let s = doc.exists ? doc.data().items : JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
+            let s = doc.exists ? doc.data().items : [];
             document.getElementById('topicList').innerHTML = s.map((t, i) => `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><div><b>${i+1}. ${t.t || t.q}</b><br><small>${t.o}</small></div><div><button onclick="editT(${i})" style="color:blue;border:none;background:none;font-weight:bold;margin-right:10px;cursor:pointer;">수정</button><button onclick="delT(${i})" style="color:red;border:none;background:none;cursor:pointer;">삭제</button></div></div>`).join('');
         }
 
@@ -247,7 +268,15 @@
             document.getElementById('cList').innerHTML = html;
         }
 
-        function backupData() { const d = { config: localStorage.getItem('fitConfig'), posts: localStorage.getItem('fitPosts'), survey: localStorage.getItem('fitSurveyMaster'), consults: localStorage.getItem('fitConsults') }; const b = new Blob([JSON.stringify(d)], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `FIT_BACKUP.json`; l.click(); }
+        function backupData() {
+            const d = { 
+                config: document.getElementById('adminPw').value,
+                posts: globalPosts,
+                survey: [] // 필요 시 추가
+            };
+            const b = new Blob([JSON.stringify(d)], {type:'application/json'});
+            const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = `FIT_BACKUP.json`; l.click();
+        }
 
         async function restoreData(input) {
             if(!input.files[0]) return;
@@ -255,19 +284,14 @@
             reader.onload = async e => {
                 const data = JSON.parse(e.target.result);
                 if(confirm('서버 복구를 시작할까요?')) {
-                    showStatus("데이터 분석 중...");
+                    showStatus("복구 중...");
                     try {
-                        if(data.config) await db.collection('config').doc('site').set(JSON.parse(data.config));
-                        if(data.survey) await db.collection('config').doc('surveyMaster').set({ items: JSON.parse(data.survey) });
                         if(data.posts) {
-                            const ps = JSON.parse(data.posts);
-                            for(let i=0; i<ps.length; i++) {
-                                showStatus(`게시글 복구 중 (${i+1}/${ps.length})`);
-                                let p = ps[i]; if(p.image && p.image.length > 500000) p.image = "";
-                                await db.collection('posts').doc(String(p.id)).set({ ...p, sortIndex: i });
+                            for(let p of data.posts) {
+                                await db.collection('posts').doc(p.id).set(p);
                             }
                         }
-                        alert('서버 복구 완료!'); location.reload();
+                        alert('복구 완료!'); location.reload();
                     } catch(err) { alert(err.message); }
                     hideStatus();
                 }
@@ -277,7 +301,7 @@
 
         window.onload = async function() {
             const doc = await db.collection('config').doc('site').get();
-            const cfg = doc.exists ? doc.data() : JSON.parse(localStorage.getItem('fitConfig') || '{"pw":"7777"}');
+            const cfg = doc.exists ? doc.data() : {pw:"7777"};
             document.getElementById('adminPw').value = cfg.pw;
             document.getElementById('bannerLink').value = cfg.bannerLink || "";
             document.getElementById('siteLogo').value = cfg.logo || "";

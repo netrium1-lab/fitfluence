@@ -205,8 +205,12 @@
                     if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
                 }
 
-                // 게시글 로드
-                const snap = await db.collection('posts').orderBy('sortIndex', 'asc').get();
+                // 게시글 로드 (임시저장 글 제외)
+                const snap = await db.collection('posts')
+                    .where('status', '!=', 'draft')
+                    .orderBy('status')
+                    .orderBy('sortIndex', 'asc')
+                    .get();
                 const ps = []; snap.forEach(d => { var data = d.data(); data.id = d.id; ps.push(data); });
 
                 ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {

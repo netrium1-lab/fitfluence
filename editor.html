@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>FIT-FLUENCE 프리미엄 에디터</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
@@ -46,7 +47,7 @@
     </style>
 </head>
 <body>
-    <div id="saveMsg">임시 저장되었습니다.</div>
+    <div id="saveMsg">데이터베이스에 임시 저장되었습니다.</div>
     <div class="editor-container">
         <h1 id="editorTitle">🖋️ FIT-FLUENCE 프리미엄 에디터</h1>
         
@@ -62,6 +63,13 @@
         </div>
 
         <div class="toolbar">
+            <select class="tool-select" onchange="window.execCmd('fontName', this.value)">
+                <option value="'Pretendard', sans-serif">기본 글꼴</option>
+                <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                <option value="'Noto Sans KR', sans-serif">본고딕</option>
+                <option value="Arial">Arial</option>
+            </select>
             <select class="tool-select" onchange="window.setFontSize(this.value)">
                 <option value="3">본문 크기</option>
                 <option value="1">매우 작게</option>
@@ -121,24 +129,8 @@
                     mainThumb = data.image;
                     if(mainThumb) addImgToGrid(mainThumb);
                 }
-            } else {
-                // 새 글 작성 시 임시 저장된 글 확인
-                const draft = localStorage.getItem('fit_post_draft');
-                if (draft) {
-                    const data = JSON.parse(draft);
-                    if (confirm('작성 중이던 임시 저장 글이 있습니다. 불러올까요?')) {
-                        document.getElementById('pTitle').value = data.title || '';
-                        document.getElementById('pCategory').value = data.category || '건강재테크';
-                        document.getElementById('pContent').innerHTML = data.content || '';
-                        if(data.image) {
-                            mainThumb = data.image;
-                            addImgToGrid(mainThumb);
-                        }
-                    }
-                }
             }
             
-            // 붙여넣기 시 유튜브 주소 자동 변환
             document.getElementById('pContent').addEventListener('paste', function(e) {
                 const text = e.clipboardData.getData('text/plain');
                 const youtubeId = window.getYoutubeId(text);
@@ -149,20 +141,33 @@
             });
         };
 
-        // 임시 저장 함수
-        window.saveDraft = function() {
-            const draftData = {
-                title: document.getElementById('pTitle').value,
-                category: document.getElementById('pCategory').value,
-                content: document.getElementById('pContent').innerHTML,
-                image: mainThumb,
-                savedAt: new Date().getTime()
-            };
-            localStorage.setItem('fit_post_draft', JSON.stringify(draftData));
+        // 서버형 임시 저장 함수
+        window.saveDraft = async function() {
+            const title = document.getElementById('pTitle').value || "제목 없는 임시글";
+            const content = document.getElementById('pContent').innerHTML;
             
-            const msg = document.getElementById('saveMsg');
-            msg.style.display = 'block';
-            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+            const postData = {
+                title: title, category: document.getElementById('pCategory').value, content: content,
+                image: mainThumb, date: new Date().toLocaleDateString(),
+                status: 'draft', // 임시저장 상태 표시
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                if (editId) {
+                    await db.collection('posts').doc(editId).update(postData);
+                } else {
+                    const newDoc = await db.collection('posts').add({
+                        ...postData,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    editId = newDoc.id; // 새로 생성된 경우 ID 유지
+                }
+                
+                const msg = document.getElementById('saveMsg');
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 2000);
+            } catch(e) { alert('임시 저장 실패: ' + e.message); }
         }
 
         window.getYoutubeId = function(url) {
@@ -284,6 +289,7 @@
             const postData = {
                 title: title, category: document.getElementById('pCategory').value, content: content,
                 image: mainThumb, date: new Date().toLocaleDateString(),
+                status: 'published', // 정식 발행 상태
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if(!editId) postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -291,10 +297,6 @@
             try {
                 if (editId) { await db.collection('posts').doc(editId).update(postData); } 
                 else { await db.collection('posts').add(postData); }
-                
-                // 발행 성공 시 임시 저장 데이터 삭제
-                localStorage.removeItem('fit_post_draft');
-                
                 alert('반영되었습니다!');
                 location.href = 'admin.html';
             } catch(e) {

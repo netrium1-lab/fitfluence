@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
         :root { --gold: #D4AF37; --black: #050505; }
-        body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #333; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: #f4f4f4; height: 100vh; color: #333; }
         .sidebar { width: 280px; background: #fff; border-right: 1px solid #eee; padding: 40px 30px; flex-shrink: 0; display: flex; flex-direction: column; }
         .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.4rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
         .menu-item { padding: 15px 20px; cursor: pointer; border-radius: 12px; margin-bottom: 10px; color: #666; transition: 0.3s; display: flex; align-items: center; gap: 12px; }
@@ -92,7 +91,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
         if (sessionStorage.getItem('fit_auth') !== 'true') { location.href = 'index.html'; }
         else { document.getElementById('adminBody').style.display = 'flex'; }
@@ -111,53 +109,34 @@
             if(!i.files[0]) return;
             const file = i.files[0];
             
-            // 파일 크기 체크 (5MB 제한)
-            if (file.size > 5 * 1024 * 1024) {
-                alert("파일 크기가 너무 큽니다. (5MB 이하만 가능)");
+            // 파일 크기 체크 (800KB 제한)
+            if (file.size > 800 * 1024) {
+                alert("이미지 용량이 너무 큽니다. (800KB 이하의 이미지를 사용해주세요)");
                 return;
             }
 
-            try {
-                showStatus("서버 준비 중...", "연결을 확인하고 있습니다.");
-                
-                const fileName = `hero_${Date.now()}.jpg`;
-                const storageRef = storage.ref().child(`config/${fileName}`);
-                const metadata = { contentType: file.type || 'image/jpeg' };
-                
-                showStatus("전송 준비 완료", "이미지를 업로드합니다.");
-                
-                // 더 안정적인 put(file) 방식으로 변경
-                const uploadTask = storageRef.put(file, metadata);
-                
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                        showStatus("이미지 전송 중...", progress + "% 완료");
-                    }, 
-                    (error) => {
-                        console.error("Upload Error Details:", error);
-                        alert("업로드 실패: " + error.message + "\n(인터넷 연결이나 Firebase 설정을 확인해주세요)");
-                        hideStatus();
-                    }, 
-                    async () => {
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        document.getElementById('preview').innerHTML = `<img src="${downloadURL}">`;
-                        hideStatus();
-                        // 이미지 URL을 포함해 설정을 서버에 자동 저장
-                        await saveDesign();
-                        alert("메인 배경 이미지가 성공적으로 변경되었습니다!");
-                    }
-                );
-            } catch (err) {
-                console.error("Critical Upload Error:", err);
-                alert("처리 중 오류 발생: " + err.message);
-                hideStatus();
-            }
+            const reader = new FileReader();
+            showStatus("이미지 처리 중...", "데이터베이스 저장 방식을 준비합니다.");
+            
+            reader.onload = async (e) => {
+                try {
+                    const base64Data = e.target.result;
+                    document.getElementById('preview').innerHTML = `<img src="${base64Data}">`;
+                    hideStatus();
+                    // 즉시 저장
+                    await saveDesign();
+                    alert("메인 배경 이미지가 즉시 저장되었습니다!");
+                } catch (err) {
+                    alert("처리 오류: " + err.message);
+                    hideStatus();
+                }
+            };
+            reader.readAsDataURL(file);
         }
         window.pickHero = pickHero;
 
         async function saveDesign() {
-            showStatus("설정값 서버 저장 중...");
+            showStatus("서버에 영구 저장 중...");
             const previewImg = document.querySelector('#preview img');
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
@@ -166,9 +145,8 @@
                 img: previewImg ? previewImg.src : ""
             };
             try {
-                await db.collection('config').doc('site').set(cfg);
+                await db.collection('config').doc('site').set(cfg, {merge: true});
                 localStorage.setItem('fitConfig', JSON.stringify(cfg));
-                // alert('서버 저장 완료!');
             } catch(e) { alert("서버 저장 오류: " + e.message); }
             hideStatus();
         }

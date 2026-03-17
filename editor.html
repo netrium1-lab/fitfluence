@@ -35,15 +35,18 @@
         #pContent iframe { max-width: 100%; border-radius: 12px; margin: 25px auto; display: block; border: none; }
         #pContent a { color: var(--gold); text-decoration: underline; }
 
-        .btn-wrap { margin-top: 50px; text-align: center; display: flex; gap: 20px; justify-content: center; }
-        .publish-btn { background: var(--gold); color: #000; border: none; padding: 22px 80px; border-radius: 100px; font-size: 1.3rem; font-weight: 900; cursor: pointer; transition: 0.3s; }
+        .btn-wrap { margin-top: 50px; text-align: center; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .publish-btn { background: var(--gold); color: #000; border: none; padding: 22px 60px; border-radius: 100px; font-size: 1.2rem; font-weight: 900; cursor: pointer; transition: 0.3s; }
         .publish-btn:hover { transform: scale(1.03); background: #f2e3b1; }
-        .cancel-btn { background: #222; color: #888; border: 1px solid #333; padding: 22px 40px; border-radius: 100px; cursor: pointer; }
+        .draft-btn { background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 22px 40px; border-radius: 100px; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+        .cancel-btn { background: #222; color: #888; border: 1px solid #333; padding: 22px 30px; border-radius: 100px; cursor: pointer; }
         
         #statusInfo { display: none; color: var(--gold); font-size: 0.9rem; margin-bottom: 10px; text-align: center; background: rgba(212,175,55,0.1); padding: 8px; border-radius: 8px; }
+        #saveMsg { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 25px; border-radius: 50px; font-weight: bold; display: none; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
+    <div id="saveMsg">임시 저장되었습니다.</div>
     <div class="editor-container">
         <h1 id="editorTitle">🖋️ FIT-FLUENCE 프리미엄 에디터</h1>
         
@@ -83,6 +86,7 @@
         <div id="pContent" contenteditable="true" placeholder="이곳에 내용을 작성하세요..."></div>
 
         <div class="btn-wrap">
+            <button class="draft-btn" onclick="window.saveDraft()">💾 임시저장</button>
             <button class="publish-btn" onclick="window.savePost()" id="saveBtn">발행하기 (홈페이지 반영)</button>
             <button class="cancel-btn" onclick="location.href='admin.html'">취소</button>
         </div>
@@ -117,6 +121,21 @@
                     mainThumb = data.image;
                     if(mainThumb) addImgToGrid(mainThumb);
                 }
+            } else {
+                // 새 글 작성 시 임시 저장된 글 확인
+                const draft = localStorage.getItem('fit_post_draft');
+                if (draft) {
+                    const data = JSON.parse(draft);
+                    if (confirm('작성 중이던 임시 저장 글이 있습니다. 불러올까요?')) {
+                        document.getElementById('pTitle').value = data.title || '';
+                        document.getElementById('pCategory').value = data.category || '건강재테크';
+                        document.getElementById('pContent').innerHTML = data.content || '';
+                        if(data.image) {
+                            mainThumb = data.image;
+                            addImgToGrid(mainThumb);
+                        }
+                    }
+                }
             }
             
             // 붙여넣기 시 유튜브 주소 자동 변환
@@ -129,6 +148,22 @@
                 }
             });
         };
+
+        // 임시 저장 함수
+        window.saveDraft = function() {
+            const draftData = {
+                title: document.getElementById('pTitle').value,
+                category: document.getElementById('pCategory').value,
+                content: document.getElementById('pContent').innerHTML,
+                image: mainThumb,
+                savedAt: new Date().getTime()
+            };
+            localStorage.setItem('fit_post_draft', JSON.stringify(draftData));
+            
+            const msg = document.getElementById('saveMsg');
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+        }
 
         window.getYoutubeId = function(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -256,6 +291,10 @@
             try {
                 if (editId) { await db.collection('posts').doc(editId).update(postData); } 
                 else { await db.collection('posts').add(postData); }
+                
+                // 발행 성공 시 임시 저장 데이터 삭제
+                localStorage.removeItem('fit_post_draft');
+                
                 alert('반영되었습니다!');
                 location.href = 'admin.html';
             } catch(e) {

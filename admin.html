@@ -108,28 +108,41 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // [수정] 업로드 방식 변경 (putString -> put) 으로 안정성 확보
+        // [수정] 업로드 방식 변경 (Base64 방식) 으로 0% 멈춤 현상 해결
         async function pickHero(i) {
             if(!i.files[0]) return;
             const file = i.files[0];
-            showStatus("배경 이미지 전송 중...", "0% 완료");
+            const reader = new FileReader();
             
-            const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
-            const uploadTask = ref.put(file);
+            showStatus("배경 이미지 준비 중...", "잠시만 기다려주세요.");
             
-            uploadTask.on('state_changed', 
-                (snap) => {
-                    const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                    showStatus("배경 이미지 전송 중...", p + "% 완료");
-                },
-                (err) => { alert("업로드 실패: " + err.message); hideStatus(); },
-                async () => {
-                    const url = await uploadTask.snapshot.ref.getDownloadURL();
-                    document.getElementById('preview').innerHTML = `<img src="${url}">`;
+            reader.onload = async (e) => {
+                const dataUrl = e.target.result;
+                const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
+                
+                showStatus("배경 이미지 전송 중...", "서버로 전송을 시작합니다.");
+                
+                try {
+                    const uploadTask = ref.putString(dataUrl, 'data_url');
+                    uploadTask.on('state_changed', 
+                        (snap) => {
+                            const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                            showStatus("배경 이미지 전송 중...", p + "% 완료");
+                        },
+                        (err) => { alert("업로드 실패: " + err.message); hideStatus(); },
+                        async () => {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            document.getElementById('preview').innerHTML = `<img src="${url}">`;
+                            hideStatus();
+                            alert("업로드 성공! '모든 설정 서버 저장' 버튼을 눌러주세요.");
+                        }
+                    );
+                } catch(err) {
+                    alert("전송 오류: " + err.message);
                     hideStatus();
-                    alert("업로드 성공! '모든 설정 서버 저장' 버튼을 눌러주세요.");
                 }
-            );
+            };
+            reader.readAsDataURL(file);
         }
         window.pickHero = pickHero;
 

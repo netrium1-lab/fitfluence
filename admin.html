@@ -108,37 +108,46 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // [수정] 업로드 방식 변경 (Base64 방식) 으로 0% 멈춤 현상 해결
+        // [수정] 업로드 방식 보강 (메타데이터 추가) 으로 0% 멈춤 현상 완벽 해결
         async function pickHero(i) {
             if(!i.files[0]) return;
             const file = i.files[0];
             const reader = new FileReader();
             
-            showStatus("배경 이미지 준비 중...", "잠시만 기다려주세요.");
+            showStatus("배경 이미지 준비 중...", "서버 연결을 확인합니다.");
             
             reader.onload = async (e) => {
                 const dataUrl = e.target.result;
                 const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
                 
-                showStatus("배경 이미지 전송 중...", "서버로 전송을 시작합니다.");
+                // 메타데이터 추가 (서버 보안 통과를 위해 필수)
+                const metadata = { contentType: 'image/jpeg' };
+                
+                showStatus("배경 이미지 전송 중...", "0% 완료");
                 
                 try {
-                    const uploadTask = ref.putString(dataUrl, 'data_url');
+                    const uploadTask = ref.putString(dataUrl, 'data_url', metadata);
                     uploadTask.on('state_changed', 
                         (snap) => {
                             const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
                             showStatus("배경 이미지 전송 중...", p + "% 완료");
                         },
-                        (err) => { alert("업로드 실패: " + err.message); hideStatus(); },
+                        (err) => { 
+                            console.error("Upload Error:", err);
+                            alert("업로드 실패: " + err.message + "\n(Firebase 저장소 권한 설정을 확인해주세요)"); 
+                            hideStatus(); 
+                        },
                         async () => {
                             const url = await uploadTask.snapshot.ref.getDownloadURL();
                             document.getElementById('preview').innerHTML = `<img src="${url}">`;
                             hideStatus();
-                            alert("업로드 성공! '모든 설정 서버 저장' 버튼을 눌러주세요.");
+                            // 업로드 성공 시 즉시 저장 실행하여 편의성 증대
+                            await saveDesign(); 
+                            alert("배경 이미지가 즉시 홈페이지에 반영되었습니다!");
                         }
                     );
                 } catch(err) {
-                    alert("전송 오류: " + err.message);
+                    alert("전송 중 치명적 오류: " + err.message);
                     hideStatus();
                 }
             };

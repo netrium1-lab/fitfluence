@@ -172,6 +172,13 @@
             } catch(e) { alert('오류 발생, 다시 시도해주세요.'); }
         }
 
+        function linkify(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                return '<a href="' + url + '" target="_blank" style="color:var(--gold); text-decoration:underline;">' + url + '</a>';
+            });
+        }
+
         async function viewPost(id) {
             var localPs = JSON.parse(localStorage.getItem('fitPosts') || '[]');
             var p = localPs.find(x => String(x.id) === String(id));
@@ -179,7 +186,8 @@
             if(!p) return;
             document.getElementById('modalCate').innerText = p.category;
             document.getElementById('modalTitle').innerText = p.title;
-            document.getElementById('modalBody').innerHTML = p.content;
+            // 링크 자동 활성화 적용
+            document.getElementById('modalBody').innerHTML = linkify(p.content || "");
             document.getElementById('postModal').style.display='block';
             document.body.style.overflow='hidden';
         }
@@ -187,8 +195,16 @@
         window.onload = async function() {
             var localCfg = JSON.parse(localStorage.getItem('fitConfig') || '{}');
             var localPosts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
+            
+            // 초기 로컬 데이터 적용
             if(localCfg.logo) document.getElementById('mainLogo').innerText = localCfg.logo;
-            if(localCfg.img) document.getElementById('mainHero').style.backgroundImage = `url(${localCfg.img})`;
+            if(localCfg.img) {
+                const hero = document.getElementById('mainHero');
+                hero.style.backgroundImage = "url('" + localCfg.img + "')";
+                hero.style.backgroundSize = "cover";
+                hero.style.backgroundPosition = "center";
+                hero.style.backgroundRepeat = "no-repeat";
+            }
             if(localCfg.bannerLink) document.getElementById('link-tv').href = localCfg.bannerLink;
             renderPosts(localPosts, []);
 
@@ -198,8 +214,12 @@
                     var c = doc.data();
                     if(c.logo) document.getElementById('mainLogo').innerText = c.logo;
                     if(c.img) {
-                        document.getElementById('mainHero').style.backgroundImage = `url(${c.img})`;
-                        document.getElementById('mainHero').style.backgroundSize = "cover";
+                        const hero = document.getElementById('mainHero');
+                        hero.style.backgroundImage = "url('" + c.img + "')";
+                        hero.style.backgroundSize = "cover";
+                        hero.style.backgroundPosition = "center center";
+                        hero.style.backgroundRepeat = "no-repeat";
+                        hero.style.display = "flex"; // 이미지가 있으면 확실히 노출
                     }
                     if(c.bannerLink) document.getElementById('link-tv').href = c.bannerLink;
                 }
@@ -207,7 +227,7 @@
                 var cloudPosts = [];
                 snap.forEach(d => { var data = d.data(); data.id = d.id; cloudPosts.push(data); });
                 renderPosts(localPosts, cloudPosts);
-            } catch(e) {}
+            } catch(e) { console.error("Data load error:", e); }
         };
     </script>
 </body>

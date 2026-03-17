@@ -2,13 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>FIT-FLUENCE 관리 시스템 - 통합 관제탑</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FIT-FLUENCE 관리 시스템</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --gold: #D4AF37; --bg: #f4f7f6; }
+        :root { --gold: #D4AF37; --black: #050505; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: var(--bg); height: 100vh; color: #333; }
         .sidebar { width: 280px; background: #fff; border-right: 1px solid #eee; padding: 40px 30px; flex-shrink: 0; display: flex; flex-direction: column; }
         .sidebar h2 { color: var(--gold); margin-bottom: 50px; font-size: 1.4rem; font-weight: 900; border-left: 5px solid var(--gold); padding-left: 15px; }
@@ -27,7 +29,6 @@
         #preview { width: 100%; height: 200px; background: #eee; border-radius: 20px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #ccc; cursor: pointer; position: relative; }
         #preview img { width: 100%; height: 100%; object-fit: cover; }
         .move-btn { padding: 5px 10px; background: #eee; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; font-size: 0.8rem; margin-bottom: 2px; }
-        .move-btn:hover { background: var(--gold); color: #fff; }
         #statusOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); color: #fff; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
@@ -61,14 +62,7 @@
             </div>
         </div>
 
-        <div id="posts" class="tab">
-            <div class="card">
-                <h1>📝 게시글 관리</h1>
-                <p style="color:#888; margin-bottom:20px;">* 순서 변경 버튼(▲▼)을 누르면 즉시 홈페이지에 반영됩니다.</p>
-                <button class="btn" style="width:auto; padding:10px 30px; margin-bottom:20px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button>
-                <table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table>
-            </div>
-        </div>
+        <div id="posts" class="tab"><div class="card"><h1>📝 게시글 관리</h1><button class="btn" style="width:auto; padding:10px 30px;" onclick="location.href='editor.html'">+ 새 글 쓰기</button><table><thead><tr><th>순서</th><th>카테고리</th><th>제목</th><th>관리</th></tr></thead><tbody id="pTable"></tbody></table></div></div>
 
         <div id="survey" class="tab">
             <div class="card">
@@ -86,7 +80,7 @@
         <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><button onclick="downloadExcel()" style="background:#1D6F42; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; margin-bottom:15px;">📊 엑셀 다운로드</button><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
     </div>
 
-    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2><p id="statusSub">잠시만 기다려주세요.</p></div>
+    <div id="statusOverlay"><h2 id="statusMsg">서버 처리 중...</h2><p id="statusSub">창을 닫지 마세요.</p></div>
 
     <script>
         const firebaseConfig = {
@@ -104,11 +98,7 @@
         if (sessionStorage.getItem('fit_auth') !== 'true') { location.href = 'index.html'; }
         else { document.getElementById('adminBody').style.display = 'flex'; }
 
-        function showStatus(msg, sub = "") { 
-            document.getElementById('statusOverlay').style.display = 'flex'; 
-            document.getElementById('statusMsg').innerText = msg; 
-            document.getElementById('statusSub').innerText = sub;
-        }
+        function showStatus(msg, sub = "") { document.getElementById('statusOverlay').style.display = 'flex'; document.getElementById('statusMsg').innerText = msg; document.getElementById('statusSub').innerText = sub; }
         function hideStatus() { document.getElementById('statusOverlay').style.display = 'none'; }
 
         function showTab(id, el) {
@@ -118,34 +108,33 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
+        // [수정] 업로드 방식 변경 (putString -> put) 으로 안정성 확보
         async function pickHero(i) {
-            if(i.files[0]) {
-                showStatus("이미지 업로드 중...", "0%");
-                const reader = new FileReader();
-                reader.onload = async e => {
-                    const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
-                    const uploadTask = ref.putString(e.target.result, 'data_url');
-                    uploadTask.on('state_changed', 
-                        snap => {
-                            const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                            showStatus("이미지 업로드 중...", p + "% 완료");
-                        },
-                        err => { alert("업로드 실패"); hideStatus(); },
-                        async () => {
-                            const url = await uploadTask.snapshot.ref.getDownloadURL();
-                            document.getElementById('preview').innerHTML = `<img src="${url}">`;
-                            hideStatus();
-                            alert("업로드 성공! 반드시 하단의 '모든 설정 서버 저장' 버튼을 눌러주세요.");
-                        }
-                    );
-                };
-                reader.readAsDataURL(i.files[0]);
-            }
+            if(!i.files[0]) return;
+            const file = i.files[0];
+            showStatus("배경 이미지 전송 중...", "0% 완료");
+            
+            const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
+            const uploadTask = ref.put(file);
+            
+            uploadTask.on('state_changed', 
+                (snap) => {
+                    const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                    showStatus("배경 이미지 전송 중...", p + "% 완료");
+                },
+                (err) => { alert("업로드 실패: " + err.message); hideStatus(); },
+                async () => {
+                    const url = await uploadTask.snapshot.ref.getDownloadURL();
+                    document.getElementById('preview').innerHTML = `<img src="${url}">`;
+                    hideStatus();
+                    alert("업로드 성공! '모든 설정 서버 저장' 버튼을 눌러주세요.");
+                }
+            );
         }
         window.pickHero = pickHero;
 
         async function saveDesign() {
-            showStatus("서버에 저장 중...");
+            showStatus("설정값 서버 저장 중...");
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
                 bannerLink: document.getElementById('bannerLink').value,
@@ -155,7 +144,7 @@
             try {
                 await db.collection('config').doc('site').set(cfg);
                 localStorage.setItem('fitConfig', JSON.stringify(cfg));
-                alert('저장 완료!');
+                alert('서버 저장 완료!');
             } catch(e) { alert("오류: " + e.message); }
             hideStatus();
         }
@@ -163,8 +152,7 @@
         let globalPosts = [];
         async function loadP() {
             const snap = await db.collection('posts').get();
-            globalPosts = [];
-            snap.forEach(d => { var data = d.data(); data.id = d.id; globalPosts.push(data); });
+            globalPosts = []; snap.forEach(d => { var data = d.data(); data.id = d.id; globalPosts.push(data); });
             globalPosts.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
             renderPostTable();
         }
@@ -188,19 +176,40 @@
         async function movePost(idx, dir) {
             const newIdx = idx + dir;
             if(newIdx < 0 || newIdx >= globalPosts.length) return;
-            const temp = globalPosts[idx];
-            globalPosts[idx] = globalPosts[newIdx];
+            
+            showStatus("순서 변경 중...");
+            const temp = globalPosts[idx]; 
+            globalPosts[idx] = globalPosts[newIdx]; 
             globalPosts[newIdx] = temp;
+            
             renderPostTable();
-            // 서버에 순서 즉시 업데이트
-            for(let i=0; i<globalPosts.length; i++) {
-                if(globalPosts[i].id.length > 5) {
-                    await db.collection('posts').doc(globalPosts[i].id).update({ sortIndex: i });
-                }
+            
+            try {
+                const batch = db.batch();
+                globalPosts.forEach((post, i) => {
+                    if(post.id && post.id.length > 5) {
+                        const ref = db.collection('posts').doc(post.id);
+                        batch.update(ref, { sortIndex: i });
+                    }
+                });
+                await batch.commit();
+            } catch(e) { 
+                alert("순서 저장 실패: " + e.message); 
+                loadP(); // 실패 시 데이터 재로드
             }
+            hideStatus();
         }
 
-        async function delP(id) { if(confirm('정말 삭제할까요?')) { await db.collection('posts').doc(id).delete(); loadP(); } }
+        async function delP(id) { 
+            if(confirm('정말 삭제할까요?')) { 
+                showStatus("게시글 삭제 중...");
+                try {
+                    await db.collection('posts').doc(id).delete(); 
+                    await loadP(); 
+                } catch(e) { alert("삭제 실패: " + e.message); }
+                hideStatus();
+            } 
+        }
 
         let editIdx = null;
         async function addTopic() {
@@ -210,6 +219,7 @@
             let s = doc.exists ? doc.data().items : [];
             if(editIdx !== null) { s[editIdx] = {t, o}; editIdx = null; } else { s.push({t, o}); }
             await db.collection('config').doc('surveyMaster').set({ items: s });
+            localStorage.setItem('fitSurveyMaster', JSON.stringify(s));
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             renderTopics();
         }
@@ -252,8 +262,7 @@
                             const ps = JSON.parse(data.posts);
                             for(let i=0; i<ps.length; i++) {
                                 showStatus(`게시글 복구 중 (${i+1}/${ps.length})`);
-                                let p = ps[i];
-                                if(p.image && p.image.length > 500000) p.image = "";
+                                let p = ps[i]; if(p.image && p.image.length > 500000) p.image = "";
                                 await db.collection('posts').doc(String(p.id)).set({ ...p, sortIndex: i });
                             }
                         }

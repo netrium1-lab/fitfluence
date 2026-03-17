@@ -43,7 +43,7 @@
         .survey-group b { display: block; margin-bottom: 15px; color: var(--gold); font-size: 1.1rem; }
         .opt { display: inline-block; padding: 12px 18px; background: #222; border: 1px solid #333; border-radius: 12px; margin: 0 8px 8px 0; font-size: 0.95rem; color: #fff; cursor: pointer; }
         .opt.act { background: var(--gold) !important; color: #000 !important; font-weight: bold; }
-        .submit-btn { background: var(--gold-gradient); color: #000; padding: 22px; width: 100%; border: none; border-radius: 15px; font-weight: 900; font-size: 1.3rem; margin-top: 30px; cursor: pointer; }
+        .submit-btn { background: var(--metallic-gold); color: #000; padding: 22px; width: 100%; border: none; border-radius: 15px; font-weight: 900; font-size: 1.3rem; margin-top: 30px; cursor: pointer; }
 
         .post-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 3000; padding: 15px; overflow-y: auto; }
         .post-inner { max-width: 850px; margin: 20px auto; background: #111; border-radius: 25px; border: 1px solid #222; padding: 25px; }
@@ -95,7 +95,7 @@
     </div>
 
     <div id="postModal" class="post-modal">
-        <div class="post-inner" onclick="event.stopPropagation()">
+        <div class="post-inner">
             <div id="modalHeader" style="border-bottom:1px solid #333; margin-bottom:30px; padding-bottom:20px;">
                 <p id="modalCate" style="color:var(--gold); font-weight:bold; margin-bottom:10px; font-size:0.9rem;"></p>
                 <h2 id="modalTitle" style="font-size:1.8rem; color:var(--gold);"></h2>
@@ -118,116 +118,101 @@
         const db = firebase.firestore();
 
         function enterAdmin() { var pw = prompt('보안 코드'); if(pw === "7777") { sessionStorage.setItem('fit_auth','true'); location.href='admin.html'; } }
-        function handleSelect(el) { var opts = el.parentElement.querySelectorAll('.opt'); opts.forEach(o => o.classList.remove('act')); el.classList.add('act'); }
+        function sel(el) { var opts = el.parentElement.querySelectorAll('.opt'); opts.forEach(o => o.classList.remove('act')); el.classList.add('act'); }
         function closeSurvey() { document.getElementById('surveyModal').style.display='none'; document.body.style.overflow='auto'; }
         function closePost() { document.getElementById('postModal').style.display='none'; document.body.style.overflow='auto'; }
         function scrollToCommunity() { var c = document.getElementById('comm'); if(c) c.scrollIntoView({behavior:'smooth'}); }
 
-        function renderPosts(localPosts, cloudPosts) {
-            const combined = [...cloudPosts];
-            localPosts.forEach(lp => { if(!combined.find(cp => String(cp.id) === String(lp.id))) combined.push(lp); });
-            // sortIndex 기준 정렬
-            combined.sort((a,b) => (a.sortIndex || 0) - (b.sortIndex || 0));
-
-            ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(function(c) {
-                var el = document.getElementById('list-' + c);
-                var filtered = combined.filter(p => p.category === c);
-                if(filtered.length) {
-                    el.innerHTML = filtered.map(p => `
-                        <div class="card" onclick="viewPost('${p.id}')">
-                            <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
-                            <div class="card-body"><h3>${p.title}</h3><p>${p.date || ''}</p></div>
-                        </div>`).join('');
-                } else { el.innerHTML = '<p style="color:#333; padding:20px;">콘텐츠 준비 중</p>'; }
-            });
-        }
-
         async function openSurvey() {
-            var container = document.getElementById('dynamicSurvey');
-            var master = JSON.parse(localStorage.getItem('fitSurveyMaster') || '[]');
-            try { var doc = await db.collection('config').doc('surveyMaster').get(); if(doc.exists) master = doc.data().items; } catch(e) {}
-            
-            var html = '<h2 style="color:var(--gold); margin-bottom:30px; text-align:center;">📊 혈액검사 분석 신청</h2>';
-            if(!master || master.length === 0) {
-                html += '<p style="text-align:center; color:#777; margin-bottom:20px;">항목을 설정하는 중입니다.</p>';
-            } else {
-                master.forEach(topic => {
-                    html += `<div class="survey-group"><b style="display:block; margin-bottom:15px; color:#ccc;">${topic.t || topic.q}</b>`;
-                    (topic.o || "").split(',').forEach(opt => { html += `<div class="opt" onclick="handleSelect(this)">${opt.trim()}</div>`; });
-                    html += '</div>';
+            try {
+                const doc = await db.collection('config').doc('surveyMaster').get();
+                const items = doc.exists ? doc.data().items : [];
+                let html = "";
+                items.forEach((s, i) => {
+                    html += `<div class="survey-group"><b>${i+1}. ${s.t || s.q}</b>`;
+                    const opts = s.o ? s.o.split(',') : [];
+                    opts.forEach(opt => { html += `<div class="opt" onclick="sel(this)">${opt.trim()}</div>`; });
+                    html += `</div>`;
                 });
-            }
-            container.innerHTML = html;
-            document.getElementById('surveyModal').style.display='block';
-            document.body.style.overflow='hidden';
+                document.getElementById('dynamicSurvey').innerHTML = html;
+                document.getElementById('surveyModal').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } catch(e) { console.error(e); }
         }
 
         async function submitSurvey() {
-            var n = document.getElementById('uName').value; var p = document.getElementById('uPhone').value;
-            if(!n || !p) return alert('성함과 연락처를 입력해주세요.');
-            var ans = Array.from(document.querySelectorAll('.opt.act')).map(o => o.innerText);
-            try {
-                await db.collection('consults').add({ name: n, phone: p, answers: ans, other: document.getElementById('uOther').value, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                alert('정상 접수되었습니다.'); closeSurvey();
-            } catch(e) { alert('오류 발생, 다시 시도해주세요.'); }
-        }
+            const name = document.getElementById('uName').value;
+            const phone = document.getElementById('uPhone').value;
+            const other = document.getElementById('uOther').value;
+            if(!name || !phone) return alert('성함과 연락처를 입력해주세요.');
 
-        function linkify(text) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, function(url) {
-                return '<a href="' + url + '" target="_blank" style="color:var(--gold); text-decoration:underline;">' + url + '</a>';
+            const groups = document.querySelectorAll('.survey-group');
+            const answers = [];
+            groups.forEach(g => {
+                const q = g.querySelector('b').innerText;
+                const act = g.querySelector('.opt.act');
+                if(act) answers.push(`${q}: ${act.innerText}`);
             });
+            if(other) answers.push(`기타: ${other}`);
+
+            try {
+                await db.collection('consults').add({
+                    name, phone, answers,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('정상 접수되었습니다!');
+                closeSurvey();
+            } catch(e) { alert('오류가 발생했습니다: ' + e.message); }
         }
 
         async function viewPost(id) {
-            var localPs = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-            var p = localPs.find(x => String(x.id) === String(id));
-            try { var doc = await db.collection('posts').doc(id).get(); if(doc.exists) p = doc.data(); } catch(e) {}
-            if(!p) return;
-            document.getElementById('modalCate').innerText = p.category;
-            document.getElementById('modalTitle').innerText = p.title;
-            // 링크 자동 활성화 적용
-            document.getElementById('modalBody').innerHTML = linkify(p.content || "");
-            document.getElementById('postModal').style.display='block';
-            document.body.style.overflow='hidden';
+            try {
+                const doc = await db.collection('posts').doc(id).get();
+                if(!doc.exists) return;
+                const p = doc.data();
+                document.getElementById('modalCate').innerText = p.category;
+                document.getElementById('modalTitle').innerText = p.title;
+                document.getElementById('modalBody').innerHTML = p.content;
+                document.getElementById('postModal').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } catch(e) { console.error(e); }
         }
 
         window.onload = async function() {
-            var localCfg = JSON.parse(localStorage.getItem('fitConfig') || '{}');
-            var localPosts = JSON.parse(localStorage.getItem('fitPosts') || '[]');
-            
-            // 초기 로컬 데이터 적용
-            if(localCfg.logo) document.getElementById('mainLogo').innerText = localCfg.logo;
-            if(localCfg.img) {
-                const hero = document.getElementById('mainHero');
-                hero.style.backgroundImage = "url('" + localCfg.img + "')";
-                hero.style.backgroundSize = "cover";
-                hero.style.backgroundPosition = "center";
-                hero.style.backgroundRepeat = "no-repeat";
-            }
-            if(localCfg.bannerLink) document.getElementById('link-tv').href = localCfg.bannerLink;
-            renderPosts(localPosts, []);
-
             try {
-                var doc = await db.collection('config').doc('site').get();
-                if(doc.exists) {
-                    var c = doc.data();
-                    if(c.logo) document.getElementById('mainLogo').innerText = c.logo;
-                    if(c.img) {
+                // 사이트 설정 로드
+                const cfgDoc = await db.collection('config').doc('site').get();
+                if(cfgDoc.exists) {
+                    const cfg = cfgDoc.data();
+                    if(cfg.logo) document.getElementById('mainLogo').innerText = cfg.logo;
+                    if(cfg.img) {
                         const hero = document.getElementById('mainHero');
-                        hero.style.backgroundImage = "url('" + c.img + "')";
+                        hero.style.backgroundImage = `url("${cfg.img}")`;
                         hero.style.backgroundSize = "cover";
-                        hero.style.backgroundPosition = "center center";
+                        hero.style.backgroundPosition = "center";
                         hero.style.backgroundRepeat = "no-repeat";
-                        hero.style.display = "flex"; // 이미지가 있으면 확실히 노출
                     }
-                    if(c.bannerLink) document.getElementById('link-tv').href = c.bannerLink;
+                    if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
                 }
-                var snap = await db.collection('posts').get();
-                var cloudPosts = [];
-                snap.forEach(d => { var data = d.data(); data.id = d.id; cloudPosts.push(data); });
-                renderPosts(localPosts, cloudPosts);
-            } catch(e) { console.error("Data load error:", e); }
+
+                // 게시글 로드
+                const snap = await db.collection('posts').orderBy('sortIndex', 'asc').get();
+                const ps = []; snap.forEach(d => { var data = d.data(); data.id = d.id; ps.push(data); });
+
+                ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {
+                    const el = document.getElementById('list-' + c);
+                    const filtered = ps.filter(p => p.category === c);
+                    if(filtered.length) {
+                        el.innerHTML = filtered.map(p => `
+                            <div class="card" onclick="viewPost('${p.id}')">
+                                <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
+                                <div class="card-body"><h3>${p.title}</h3><p style="color:#666; font-size:0.85rem;">${p.date || ''}</p></div>
+                            </div>`).join('');
+                    } else {
+                        el.innerHTML = '<p style="color:#444; padding:20px;">콘텐츠 준비 중</p>';
+                    }
+                });
+            } catch(e) { console.error(e); }
         };
     </script>
 </body>

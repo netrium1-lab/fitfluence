@@ -6,7 +6,6 @@
     <title>FIT-FLUENCE 관리 시스템</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
@@ -108,66 +107,69 @@
             if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
         }
 
-        // [수정] 업로드 방식 보강 (메타데이터 추가) 으로 0% 멈춤 현상 완벽 해결
         async function pickHero(i) {
             if(!i.files[0]) return;
             const file = i.files[0];
-            const reader = new FileReader();
             
-            showStatus("배경 이미지 준비 중...", "서버 연결을 확인합니다.");
-            
-            reader.onload = async (e) => {
-                const dataUrl = e.target.result;
-                const ref = storage.ref().child(`config/hero_${Date.now()}.jpg`);
+            // 파일 크기 체크 (5MB 제한)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("파일 크기가 너무 큽니다. (5MB 이하만 가능)");
+                return;
+            }
+
+            try {
+                showStatus("서버 준비 중...", "연결을 확인하고 있습니다.");
                 
-                // 메타데이터 추가 (서버 보안 통과를 위해 필수)
-                const metadata = { contentType: 'image/jpeg' };
+                const fileName = `hero_${Date.now()}.jpg`;
+                const storageRef = storage.ref().child(`config/${fileName}`);
+                const metadata = { contentType: file.type || 'image/jpeg' };
                 
-                showStatus("배경 이미지 전송 중...", "0% 완료");
+                showStatus("전송 준비 완료", "이미지를 업로드합니다.");
                 
-                try {
-                    const uploadTask = ref.putString(dataUrl, 'data_url', metadata);
-                    uploadTask.on('state_changed', 
-                        (snap) => {
-                            const p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                            showStatus("배경 이미지 전송 중...", p + "% 완료");
-                        },
-                        (err) => { 
-                            console.error("Upload Error:", err);
-                            alert("업로드 실패: " + err.message + "\n(Firebase 저장소 권한 설정을 확인해주세요)"); 
-                            hideStatus(); 
-                        },
-                        async () => {
-                            const url = await uploadTask.snapshot.ref.getDownloadURL();
-                            document.getElementById('preview').innerHTML = `<img src="${url}">`;
-                            hideStatus();
-                            // 업로드 성공 시 즉시 저장 실행하여 편의성 증대
-                            await saveDesign(); 
-                            alert("배경 이미지가 즉시 홈페이지에 반영되었습니다!");
-                        }
-                    );
-                } catch(err) {
-                    alert("전송 중 치명적 오류: " + err.message);
-                    hideStatus();
-                }
-            };
-            reader.readAsDataURL(file);
+                // 더 안정적인 put(file) 방식으로 변경
+                const uploadTask = storageRef.put(file, metadata);
+                
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                        showStatus("이미지 전송 중...", progress + "% 완료");
+                    }, 
+                    (error) => {
+                        console.error("Upload Error Details:", error);
+                        alert("업로드 실패: " + error.message + "\n(인터넷 연결이나 Firebase 설정을 확인해주세요)");
+                        hideStatus();
+                    }, 
+                    async () => {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        document.getElementById('preview').innerHTML = `<img src="${downloadURL}">`;
+                        hideStatus();
+                        // 이미지 URL을 포함해 설정을 서버에 자동 저장
+                        await saveDesign();
+                        alert("메인 배경 이미지가 성공적으로 변경되었습니다!");
+                    }
+                );
+            } catch (err) {
+                console.error("Critical Upload Error:", err);
+                alert("처리 중 오류 발생: " + err.message);
+                hideStatus();
+            }
         }
         window.pickHero = pickHero;
 
         async function saveDesign() {
             showStatus("설정값 서버 저장 중...");
+            const previewImg = document.querySelector('#preview img');
             const cfg = {
                 pw: document.getElementById('adminPw').value || "7777",
                 bannerLink: document.getElementById('bannerLink').value,
                 logo: document.getElementById('siteLogo').value,
-                img: document.querySelector('#preview img')?.src || ""
+                img: previewImg ? previewImg.src : ""
             };
             try {
                 await db.collection('config').doc('site').set(cfg);
                 localStorage.setItem('fitConfig', JSON.stringify(cfg));
-                alert('서버 저장 완료!');
-            } catch(e) { alert("오류: " + e.message); }
+                // alert('서버 저장 완료!');
+            } catch(e) { alert("서버 저장 오류: " + e.message); }
             hideStatus();
         }
 

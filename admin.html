@@ -187,6 +187,9 @@
                     <td>${p.category}</td>
                     <td><b>${p.title}</b> ${p.status === 'draft' ? '<span style="color:red;font-size:0.7rem;">[임시]</span>' : ''}</td>
                     <td>
+                        <button onclick="toggleExpose('${p.id}', ${p.showHome !== false})" class="btn-mini ${p.showHome !== false ? 'active' : ''}" style="margin-bottom:5px; width:100px;">
+                            ${p.showHome !== false ? '✅ 노출 중' : '❌ 숨김'}
+                        </button><br>
                         <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;font-weight:bold;cursor:pointer;">수정</button>
                         <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;font-weight:bold;cursor:pointer;margin-left:10px;">삭제</button>
                     </td>
@@ -195,6 +198,15 @@
             if(filtered.length === 0) {
                 document.getElementById('pTable').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:#999;">작성된 글이 없습니다.</td></tr>';
             }
+        }
+
+        async function toggleExpose(id, currentExpose) {
+            showStatus("상태 변경 중...");
+            try {
+                await db.collection('posts').doc(id).update({ showHome: !currentExpose });
+                await loadP();
+            } catch(e) { alert("변경 실패: " + e.message); }
+            hideStatus();
         }
 
         async function movePost(idx, dir) {

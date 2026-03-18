@@ -3,143 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <title>FIT-FLUENCE 프리미엄 에디터</title>
+    <!-- 폰트 로드 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    
     <style>
+        @font-face { font-family: 'HyundaiHarmony-Regular'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/HyundaiHarmony-Regular.woff2') format('woff2'); font-weight: 400; }
+        @font-face { font-family: 'HyundaiHarmony-Bold'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302@1.0/HyundaiHarmony-Bold.woff2') format('woff2'); font-weight: 700; }
+        @font-face { font-family: 'AtoZ-600'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-2@1.0/AtoZ-600.woff2') format('woff2'); font-weight: 600; }
+        @font-face { font-family: 'AtoZ-700'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-2@1.0/AtoZ-700.woff2') format('woff2'); font-weight: 700; }
+
         :root { --gold: #D4AF37; --bg: #050505; --card: #121212; }
+        * { box-sizing: border-box; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-        .editor-container { max-width: 1000px; margin: 20px auto; background: var(--card); height: calc(100vh - 40px); display: flex; flex-direction: column; border-radius: 20px; border: 1px solid #333; overflow: hidden; }
-        h1 { color: var(--gold); margin: 20px 0; font-weight: 900; text-align: center; font-size: 1.5rem; flex-shrink: 0; }
         
-        /* 스크롤 가능한 상단 설정 영역 */
-        .editor-header { padding: 0 40px; overflow-y: auto; flex-shrink: 0; max-height: 40%; border-bottom: 1px solid #222; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 8px; color: var(--gold); font-weight: bold; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; }
+        .editor-container { width: 100%; height: 100vh; display: flex; flex-direction: column; background: #000; }
 
-        .library-area { background: #1a1a1a; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
-        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
-        .img-item { background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #444; position: relative; }
-        .img-item img { width: 100%; height: 80px; object-fit: cover; }
-        .insert-btn { width: 100%; background: var(--gold); color: #000; border: none; padding: 5px; font-weight: 900; font-size: 0.7rem; cursor: pointer; }
-        .del-img-btn { position: absolute; top: 2px; right: 2px; background: rgba(255,0,0,0.8); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 10px; }
+        .top-bar { padding: 10px 20px; background: #1a1a1a; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        .logo-mini { color: var(--gold); font-weight: 900; font-size: 1.1rem; margin-right: 20px; }
+        .input-title { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 1rem; }
+        .select-cate { width: 150px; background: #333; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; }
 
-        /* 툴바 고정 및 본문 스크롤 */
-        .toolbar { background: #222; padding: 10px 20px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; sticky: top; z-index: 100; flex-shrink: 0; }
-        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+        
+        .sidebar { width: 250px; background: #121212; border-right: 1px solid #333; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid #222; }
+        .sidebar-title { color: var(--gold); font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; display: block; }
+        .btn-upload { width: 100%; background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 8px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .img-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+        
+        .img-item { background: #000; border-radius: 8px; overflow: hidden; border: 2px solid #333; position: relative; transition: 0.2s; }
+        .img-item.is-main { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.4); }
+        .img-item img { width: 100%; height: 80px; object-fit: cover; cursor: pointer; }
+        .img-controls { display: flex; background: #1a1a1a; padding: 5px; gap: 3px; }
+        .img-btn { flex: 1; font-size: 0.65rem; padding: 4px 0; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        .btn-ins { background: var(--gold); color: #000; }
+        .btn-rep { background: #444; color: #fff; }
+        .btn-rep.active { background: #fff; color: #000; }
+        .del-btn { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; z-index: 5; }
+
+        .main-editor { flex: 1; display: flex; flex-direction: column; background: #000; }
+        .toolbar { background: #222; padding: 8px 15px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .tool-group { display: flex; gap: 4px; border-right: 1px solid #444; padding-right: 8px; margin-right: 4px; align-items: center; }
+        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .tool-btn:hover { background: var(--gold); color: #000; }
-        .tool-select { background: #333; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 6px; font-size: 0.85rem; }
-        
-        .editor-body-wrapper { flex: 1; overflow-y: auto; background: #000; display: flex; flex-direction: column; }
-        #pContent { flex: 1; width: 100%; min-height: 100%; padding: 40px; box-sizing: border-box; color: #fff; font-size: 1.1rem; line-height: 1.8; outline: none; }
-        
-        /* 인용구 스타일 */
-        #pContent blockquote { border-left: 5px solid var(--gold); padding: 15px 25px; margin: 20px 0; background: rgba(212,175,55,0.05); font-style: italic; color: #ccc; }
-        
-        #pContent img { max-width: 100%; border-radius: 12px; margin: 25px auto; display: block; }
-        #pContent iframe { max-width: 100%; border-radius: 12px; margin: 25px auto; display: block; border: none; }
+        .tool-select { background: #333; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px; font-size: 0.8rem; }
 
-        .footer-toolbar { padding: 15px 40px; background: #121212; border-top: 1px solid #333; display: flex; gap: 10px; justify-content: center; flex-shrink: 0; }
-        .publish-btn { background: var(--gold); color: #000; border: none; padding: 12px 40px; border-radius: 50px; font-size: 1rem; font-weight: 900; cursor: pointer; }
-        .draft-btn { background: #333; color: var(--gold); border: 1px solid var(--gold); padding: 12px 30px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
-        .cancel-btn { background: #222; color: #888; border: 1px solid #333; padding: 12px 20px; border-radius: 50px; cursor: pointer; }
-        
-        #statusInfo { display: none; color: var(--gold); font-size: 0.8rem; margin-bottom: 5px; text-align: center; }
-        #saveMsg { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 25px; border-radius: 50px; font-weight: bold; display: none; z-index: 9999; }
-        
-        /* 업로드 중 표시 */
-        .uploading { opacity: 0.5; pointer-events: none; }
-        .uploading::after { content: "업로드 중..."; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; color: #fff; }
+        .color-palette-container { position: relative; display: inline-block; }
+        .color-palette { display: none; position: absolute; top: 40px; left: 0; background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); grid-template-columns: repeat(5, 25px); gap: 5px; }
+        .color-chip { width: 25px; height: 25px; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .color-chip:hover { transform: scale(1.1); }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 50px 0; background: #000; }
+        #pContent { max-width: 800px; margin: 0 auto; min-height: 100%; color: #fff; font-size: 1.15rem; line-height: 1.9; outline: none; padding: 20px; }
+        #pContent blockquote { border-left: 5px solid var(--gold); padding: 15px 25px; margin: 25px 0; background: rgba(212,175,55,0.05); font-style: italic; color: #ccc; }
+        #pContent img { max-width: 100%; border-radius: 12px; margin: 30px auto; display: block; }
+
+        .bottom-bar { padding: 10px 20px; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+        .btn { padding: 10px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 0.9rem; border: none; }
+        .btn-cancel { background: #333; color: #999; }
+        .btn-draft-load { background: #444; color: var(--gold); border: 1px solid var(--gold); }
+        .btn-draft-save { background: #222; color: #ccc; border: 1px solid #444; }
+        .btn-save { background: var(--gold); color: #000; }
+
+        /* 임시저장 목록 팝업 */
+        .draft-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; }
+        .draft-content { background: #1a1a1a; border: 1px solid var(--gold); border-radius: 20px; width: 90%; max-width: 500px; padding: 30px; }
+        .draft-list { max-height: 300px; overflow-y: auto; margin: 20px 0; }
+        .draft-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
+        .draft-item:hover { background: #222; }
+        .draft-item b { display: block; color: var(--gold); margin-bottom: 5px; }
+        .draft-item span { font-size: 0.8rem; color: #888; }
+
+        #statusInfo { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85rem; display: none; z-index: 9999; }
     </style>
 </head>
-<body>
-    <div id="saveMsg">데이터베이스에 임시 저장되었습니다.</div>
-    <div class="editor-container">
-        <h1 id="editorTitle">🖋️ FIT-FLUENCE 프리미엄 에디터</h1>
-        
-        <div class="editor-header">
-            <div class="form-group"><label>카테고리</label><select id="pCategory"><option value="건강재테크">건강재테크</option><option value="핏솔루션">핏솔루션</option><option value="맞춤건강안내">맞춤건강안내</option><option value="커뮤니티">커뮤니티</option></select></div>
-            <div class="form-group"><label>제목</label><input type="text" id="pTitle" placeholder="제목을 입력하세요"></div>
-
-            <div class="library-area">
-                <label>📸 사진 보관함 (본문 삽입 전 업로드 완료를 기다려주세요)</label>
-                <div id="statusInfo">사진을 처리 중입니다...</div>
-                <input type="file" id="imgInput" style="display:none" onchange="window.processImgs(this)" multiple accept="image/*">
-                <button onclick="document.getElementById('imgInput').click()" style="background:#333; color:var(--gold); border:1px solid var(--gold); padding:8px 20px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:0.8rem;">+ 사진 불러오기</button>
-                <div id="imgGrid" class="img-grid"></div>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <select class="tool-select" onchange="window.execCmd('formatBlock', this.value)">
-                <option value="P">본문 (P)</option>
-                <option value="H2">제목 1 (H2)</option>
-                <option value="H3">제목 2 (H3)</option>
-                <option value="H4">제목 3 (H4)</option>
-            </select>
-            <select class="tool-select" onchange="window.execCmd('fontName', this.value)">
-                <option value="'Pretendard', sans-serif">기본 글꼴</option>
-                <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
-                <option value="'Nanum Myeongjo', serif">나눔명조</option>
-                <option value="'Noto Sans KR', sans-serif">본고딕</option>
-            </select>
-            <select class="tool-select" onchange="window.setFontSize(this.value)">
-                <option value="3">크기 보통</option>
-                <option value="1">매우 작게</option>
-                <option value="2">작게</option>
-                <option value="4">약간 크게</option>
-                <option value="5">크게</option>
-                <option value="6">매우 크게</option>
-            </select>
-            <button class="tool-btn" onclick="window.execCmd('bold')">B</button>
-            <button class="tool-btn" onclick="window.execCmd('underline')">U</button>
-            <input type="color" title="글자 색상" style="width:30px;height:30px;border:none;background:none;cursor:pointer;" onchange="window.execCmd('foreColor', this.value)">
-            
-            <button class="tool-btn" onclick="window.execCmd('justifyLeft')">⬅️</button>
-            <button class="tool-btn" onclick="window.execCmd('justifyCenter')">↔️</button>
-            <button class="tool-btn" onclick="window.execCmd('justifyRight')">➡️</button>
-
-            <button class="tool-btn" onclick="window.execCmd('formatBlock', 'blockquote')">❝ 인용구</button>
-            <button class="tool-btn" onclick="window.insertLink()">🔗 링크</button>
-            <button class="tool-btn" onclick="window.insertVideo()">🎬 영상</button>
-            <button class="tool-btn" onclick="window.execCmd('insertHorizontalRule')">➖ 구분선</button>
-        </div>
-
-        <div class="editor-body-wrapper">
-            <div id="pContent" contenteditable="true" placeholder="이곳에 내용을 작성하세요..."></div>
-        </div>
-
-        <div class="footer-toolbar">
-            <button class="cancel-btn" onclick="location.href='admin.html'">취소</button>
-            <button class="draft-btn" onclick="window.saveDraft()">💾 임시저장</button>
-            <button class="publish-btn" onclick="window.savePost()" id="saveBtn">발행하기</button>
+<body onclick="hidePalette(event)">
+    <div id="statusInfo">처리 중...</div>
+    
+    <div id="draftModal" class="draft-modal">
+        <div class="draft-content">
+            <h2 style="color:var(--gold); margin-top:0;">📂 임시 저장 불러오기</h2>
+            <div id="draftList" class="draft-list">불러오는 중...</div>
+            <button class="btn btn-cancel" style="width:100%;" onclick="closeDrafts()">닫기</button>
         </div>
     </div>
 
+    <div class="editor-container">
+        <div class="top-bar">
+            <div class="logo-mini">FIT-FLUENCE 🖋️</div>
+            <select id="pCategory" class="select-cate">
+                <option value="건강재테크">건강재테크</option>
+                <option value="핏솔루션">핏솔루션</option>
+                <option value="맞춤건강안내">맞춤건강안내</option>
+                <option value="커뮤니티">커뮤니티</option>
+            </select>
+            <input type="text" id="pTitle" class="input-title" placeholder="제목을 입력하세요">
+        </div>
+
+        <div class="workspace">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">📸 사진 보관함</span>
+                    <button class="btn-upload" onclick="document.getElementById('imgInput').click()">+ 사진 불러오기</button>
+                    <input type="file" id="imgInput" style="display:none" onchange="window.processImgs(this)" multiple accept="image/*">
+                </div>
+                <div id="imgGrid" class="img-grid"></div>
+            </div>
+
+            <div class="main-editor">
+                <div class="toolbar">
+                    <div class="tool-group">
+                        <select class="tool-select" onchange="window.execCmd('formatBlock', this.value)">
+                            <option value="P">본문</option>
+                            <option value="H2">제목 1</option>
+                            <option value="H3">제목 2</option>
+                            <option value="H4">제목 3</option>
+                        </select>
+                        <select class="tool-select" onchange="window.execCmd('fontName', this.value)">
+                            <option value="Pretendard">기본 글꼴</option>
+                            <option value="HyundaiHarmony-Regular">현대 하모니 (R)</option>
+                            <option value="HyundaiHarmony-Bold">현대 하모니 (B)</option>
+                            <option value="AtoZ-600">에이투지 (6)</option>
+                            <option value="AtoZ-700">에이투지 (7)</option>
+                            <option value="'Nanum Gothic'">나눔고딕</option>
+                            <option value="'Nanum Myeongjo'">나눔명조</option>
+                        </select>
+                        <select class="tool-select" onchange="window.setFontSize(this.value)">
+                            <option value="3">크기 보통</option>
+                            <option value="1">매우 작게</option>
+                            <option value="2">작게</option>
+                            <option value="4">약간 크게</option>
+                            <option value="5">크게</option>
+                            <option value="6">매우 크게</option>
+                        </select>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="window.execCmd('bold')">B</button>
+                        <button class="tool-btn" onclick="window.execCmd('underline')">U</button>
+                        <div class="color-palette-container">
+                            <button class="tool-btn" onclick="togglePalette(event)" style="border-bottom: 3px solid var(--gold);">Color</button>
+                            <div id="palette" class="color-palette">
+                                <div class="color-chip" style="background:#ffffff" onclick="window.execCmd('foreColor','#ffffff')"></div>
+                                <div class="color-chip" style="background:#000000" onclick="window.execCmd('foreColor','#000000')"></div>
+                                <div class="color-chip" style="background:#D4AF37" onclick="window.execCmd('foreColor','#D4AF37')"></div>
+                                <div class="color-chip" style="background:#ff0000" onclick="window.execCmd('foreColor','#ff0000')"></div>
+                                <div class="color-chip" style="background:#ff8800" onclick="window.execCmd('foreColor','#ff8800')"></div>
+                                <div class="color-chip" style="background:#ffff00" onclick="window.execCmd('foreColor','#ffff00')"></div>
+                                <div class="color-chip" style="background:#00ff00" onclick="window.execCmd('foreColor','#00ff00')"></div>
+                                <div class="color-chip" style="background:#00ffff" onclick="window.execCmd('foreColor','#00ffff')"></div>
+                                <div class="color-chip" style="background:#0000ff" onclick="window.execCmd('foreColor','#0000ff')"></div>
+                                <div class="color-chip" style="background:#ff00ff" onclick="window.execCmd('foreColor','#ff00ff')"></div>
+                                <div class="color-chip" style="background:#777777" onclick="window.execCmd('foreColor','#777777')"></div>
+                                <div class="color-chip" style="background:#aaaaaa" onclick="window.execCmd('foreColor','#aaaaaa')"></div>
+                                <input type="color" style="grid-column: span 3; width:100%; height:25px; border:none; background:none; cursor:pointer;" onchange="window.execCmd('foreColor', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="window.execCmd('justifyLeft')">⬅️</button>
+                        <button class="tool-btn" onclick="window.execCmd('justifyCenter')">↔️</button>
+                        <button class="tool-btn" onclick="window.execCmd('justifyRight')">➡️</button>
+                    </div>
+                    <div class="tool-group">
+                        <button class="tool-btn" onclick="window.execCmd('formatBlock', 'blockquote')">❝ 인용구</button>
+                        <button class="tool-btn" onclick="window.insertLink()">🔗 링크</button>
+                        <button class="tool-btn" onclick="window.insertVideo()">🎬 영상</button>
+                    </div>
+                </div>
+
+                <div class="content-area">
+                    <div id="pContent" contenteditable="true" placeholder="이곳에 멋진 이야기를 시작하세요..."></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <button class="btn btn-cancel" onclick="location.href='admin.html'">취소</button>
+            <button class="btn btn-draft-load" id="loadDraftBtn" onclick="openDrafts()">📂 임시저장 불러오기</button>
+            <button class="btn btn-draft-save" onclick="window.saveDraft()">💾 현재 글 임시저장</button>
+            <button class="btn btn-save" onclick="window.savePost()" id="saveBtn">발행하기</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
-            authDomain: "fitflunce.firebaseapp.com",
-            projectId: "fitflunce",
-            storageBucket: "fitflunce.firebasestorage.app",
-            messagingSenderId: "186695294427",
-            appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.appspot.com", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
-
         let mainThumb = ""; 
         let editId = new URLSearchParams(location.search).get('id');
-        let uploadCount = 0; // 현재 업로드 중인 이미지 수
+        let uploadCount = 0;
 
         window.onload = async function() {
             if (editId) {
-                document.getElementById('editorTitle').innerText = "🖋️ 게시글 수정하기";
-                document.getElementById('saveBtn').innerText = "수정 완료 (저장)";
                 const doc = await db.collection('posts').doc(editId).get();
                 if (doc.exists) {
                     const data = doc.data();
@@ -147,97 +207,69 @@
                     document.getElementById('pCategory').value = data.category;
                     document.getElementById('pContent').innerHTML = data.content;
                     mainThumb = data.image;
-                    // 이미지가 있으면 보관함에도 표시 (서버 URL이므로 안전)
                     if(mainThumb) addImgToGrid(mainThumb, false);
                 }
             }
-            
-            document.getElementById('pContent').addEventListener('paste', function(e) {
-                const text = e.clipboardData.getData('text/plain');
-                const youtubeId = window.getYoutubeId(text);
-                if (youtubeId) {
-                    e.preventDefault();
-                    window.insertYoutube(youtubeId);
-                }
-            });
         };
 
-        // 서버형 임시 저장 함수
-        window.saveDraft = async function() {
-            if (uploadCount > 0) return alert('이미지 업로드 중입니다. 잠시만 기다려주세요.');
-            
-            // 본문에 Base64 데이터가 있는지 최종 확인
-            if (document.getElementById('pContent').innerHTML.includes('data:image')) {
-                return alert('이미지 처리 중입니다. 사진 보관함의 사진을 사용하여 본문에 삽입해 주세요.');
-            }
+        function togglePalette(e) { e.stopPropagation(); const p = document.getElementById('palette'); p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; }
+        function hidePalette(e) { document.getElementById('palette').style.display = 'none'; }
 
-            const title = document.getElementById('pTitle').value || "제목 없는 임시글";
-            const content = document.getElementById('pContent').innerHTML;
+        async function openDrafts() {
+            const modal = document.getElementById('draftModal');
+            const list = document.getElementById('draftList');
+            modal.style.display = 'flex';
+            list.innerHTML = "임시저장된 글을 찾는 중...";
             
-            const postData = {
-                title: title, category: document.getElementById('pCategory').value, content: content,
-                image: mainThumb, date: new Date().toLocaleDateString(),
-                status: 'draft',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
             try {
-                if (editId) {
-                    await db.collection('posts').doc(editId).update(postData);
-                } else {
-                    const newDoc = await db.collection('posts').add({
-                        ...postData,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    editId = newDoc.id;
-                }
+                // 색인 오류를 피하기 위해 orderBy를 제거하고 status로만 필터링합니다.
+                const snap = await db.collection('posts').where('status', '==', 'draft').get();
+                if(snap.empty) { list.innerHTML = "임시저장된 글이 없습니다."; return; }
                 
-                const msg = document.getElementById('saveMsg');
-                msg.style.display = 'block';
-                setTimeout(() => { msg.style.display = 'none'; }, 2000);
-            } catch(e) { alert('임시 저장 실패: ' + e.message); }
-        }
+                let drafts = [];
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    drafts.push({ id: doc.id, ...data });
+                });
 
-        window.getYoutubeId = function(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
+                // 브라우저에서 직접 최신순으로 정렬합니다.
+                drafts.sort((a, b) => {
+                    const timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
+                    const timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+                
+                list.innerHTML = "";
+                drafts.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = 'draft-item';
+                    item.innerHTML = `<b>${d.title || '제목 없음'}</b><span>${d.updatedAt ? d.updatedAt.toDate().toLocaleString() : '날짜 정보 없음'}</span>`;
+                    item.onclick = () => {
+                        if(confirm('현재 작성 중인 내용이 사라지고 임시저장된 글을 불러옵니다. 진행할까요?')) {
+                            document.getElementById('pTitle').value = d.title || "";
+                            document.getElementById('pCategory').value = d.category || "건강재테크";
+                            document.getElementById('pContent').innerHTML = d.content || "";
+                            mainThumb = d.image || "";
+                            editId = d.id; 
+                            closeDrafts();
+                        }
+                    };
+                    list.appendChild(item);
+                });
+            } catch(e) { list.innerHTML = "오류: " + e.message; }
         }
-
-        window.insertYoutube = function(id) {
-            const iframe = `<div style="text-align:center; margin:30px 0;"><iframe width="100%" height="450" src="https://www.youtube.com/embed/${id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><br>`;
-            document.execCommand('insertHTML', false, iframe);
-        }
-
-        window.insertVideo = function() {
-            const url = prompt("유튜브 주소를 입력하세요:");
-            if (url) {
-                const id = window.getYoutubeId(url);
-                if (id) window.insertYoutube(id);
-                else alert("올바른 유튜브 주소가 아닙니다.");
-            }
-        }
-
-        window.setFontSize = function(size) {
-            document.execCommand('fontSize', false, size);
-            document.getElementById('pContent').focus();
-        }
+        function closeDrafts() { document.getElementById('draftModal').style.display = 'none'; }
 
         window.processImgs = async function(input) {
             const files = Array.from(input.files);
-            if (files.length === 0) return;
-            
             document.getElementById('statusInfo').style.display = 'block';
             for (const file of files) {
                 uploadCount++;
                 try {
-                    // 1. 리사이징 (용량 최적화)
-                    const dataUrl = await resizeImg(file, 1000, 0.7);
-                    // 2. 임시 표시용 그리드 추가 (업로드 중 상태)
+                    const dataUrl = await resizeImg(file, 800, 0.4); 
                     const imgItem = addImgToGrid(dataUrl, true);
-                    // 3. 서버 업로드
-                    await uploadToStorage(file.name, dataUrl, imgItem);
-                } catch (err) { console.error(err); uploadCount--; }
+                    uploadToStorage(file.name, dataUrl, imgItem);
+                } catch (err) { uploadCount--; }
             }
             document.getElementById('statusInfo').style.display = 'none';
             input.value = "";
@@ -248,17 +280,16 @@
                 const ref = storage.ref().child(`posts/${Date.now()}_${fileName}`);
                 const snap = await ref.putString(dataUrl, 'data_url');
                 const serverUrl = await snap.ref.getDownloadURL();
-                
-                // 업로드 완료 후 상태 변경
                 imgItem.classList.remove('uploading');
-                const btn = imgItem.querySelector('.insert-btn');
-                btn.onclick = () => window.insertBody(serverUrl);
-                
-                if(!mainThumb) mainThumb = serverUrl;
+                imgItem.querySelector('.btn-ins').onclick = () => window.insertBody(serverUrl);
+                imgItem.querySelector('.btn-rep').onclick = () => window.setMainImg(serverUrl, imgItem);
+                if(!mainThumb) window.setMainImg(serverUrl, imgItem);
                 uploadCount--;
             } catch (e) {
-                alert("업로드 실패: " + e.message);
-                imgItem.remove();
+                imgItem.classList.remove('uploading');
+                imgItem.querySelector('.btn-ins').onclick = () => window.insertBody(dataUrl);
+                imgItem.querySelector('.btn-rep').onclick = () => window.setMainImg(dataUrl, imgItem);
+                if(!mainThumb) window.setMainImg(dataUrl, imgItem);
                 uploadCount--;
             }
         }
@@ -283,87 +314,64 @@
             });
         }
 
-        window.delImg = function(btn, src) {
-            btn.parentElement.remove();
-            if (mainThumb === src) {
-                const remaining = document.querySelector('#imgGrid img');
-                mainThumb = remaining ? remaining.src : "";
-            }
-        }
-
         function addImgToGrid(src, isUploading) {
             const div = document.createElement('div');
             div.className = 'img-item' + (isUploading ? ' uploading' : '');
             div.innerHTML = `
-                <button class="del-img-btn" onclick="window.delImg(this, '${src}')">X</button>
-                <img src="${src}">
-                <button class="insert-btn" ${isUploading ? 'disabled' : `onclick="window.insertBody('${src}')"`}>본문 삽입</button>
+                <button class="del-btn" onclick="this.parentElement.remove()">X</button>
+                <img src="${src}" onclick="window.insertBody('${src}')">
+                <div class="img-controls">
+                    <button class="img-btn btn-ins" onclick="window.insertBody('${src}')">본문 삽입</button>
+                    <button class="img-btn btn-rep" onclick="window.setMainImg('${src}', this.parentElement.parentElement)">대표 지정</button>
+                </div>
             `;
             document.getElementById('imgGrid').appendChild(div);
             return div;
         }
 
+        window.setMainImg = function(src, el) {
+            mainThumb = src;
+            document.querySelectorAll('.img-item').forEach(item => item.classList.remove('is-main'));
+            document.querySelectorAll('.btn-rep').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('is-main');
+            el.querySelector('.btn-rep').classList.add('active');
+        }
+
         window.insertBody = function(src) {
-            // 본문 삽입 시 절대 Base64가 들어가지 않도록 체크
-            if(src.startsWith('data:image')) {
-                alert('업로드 완료 후 삽입해주세요.');
-                return;
-            }
             const tag = `<img src="${src}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;">`;
             document.getElementById('pContent').focus();
             document.execCommand('insertHTML', false, tag + '<br>');
         }
 
-        window.execCmd = function(cmd, val=null) { 
-            document.execCommand(cmd, false, val); 
-            document.getElementById('pContent').focus(); 
-        }
-        
-        window.insertLink = function() { 
-            const url = prompt("링크 주소 (http:// 포함):"); 
-            if(url) {
-                document.getElementById('pContent').focus();
-                document.execCommand('createLink', false, url);
-            }
-        }
-
         window.savePost = async function() {
-            if (uploadCount > 0) return alert('이미지 업로드 중입니다. 잠시만 기다려주세요.');
-            
-            // 본문에 Base64 데이터가 남아있는지 최종 검사
-            const currentContent = document.getElementById('pContent').innerHTML;
-            if (currentContent.includes('data:image')) {
-                return alert('이미지 처리 방식에 오류가 감지되었습니다. 사진 보관함에서 사진을 다시 삽입해 주세요.');
-            }
-
+            const content = document.getElementById('pContent').innerHTML;
+            if (new Blob([content]).size > 950000) return alert("❌ [용량 초과] 사진이 너무 많습니다.");
             const title = document.getElementById('pTitle').value;
-            if(!title || !currentContent.trim()) return alert('제목과 내용을 입력하세요!');
-
+            if(!title) return alert("제목을 입력하세요!");
             document.getElementById('saveBtn').disabled = true;
-            document.getElementById('saveBtn').innerText = "저장 중...";
-
-            const postData = {
-                title: title, category: document.getElementById('pCategory').value, content: currentContent,
-                image: mainThumb, date: new Date().toLocaleDateString(),
-                status: 'published',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            if(!editId) postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-
+            const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, date: new Date().toLocaleDateString(), status: 'published', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
             try {
-                if (editId) { await db.collection('posts').doc(editId).update(postData); } 
-                else { await db.collection('posts').add(postData); }
-                alert('반영되었습니다!');
-                location.href = 'admin.html';
-            } catch(e) {
-                alert('저장 실패: ' + e.message);
-                document.getElementById('saveBtn').disabled = false;
-                document.getElementById('saveBtn').innerText = "발행하기";
-            }
+                if (editId) await db.collection('posts').doc(editId).update(postData);
+                else await db.collection('posts').add(postData);
+                alert('정상 발행되었습니다!'); location.href = 'admin.html';
+            } catch(e) { alert('오류: ' + e.message); document.getElementById('saveBtn').disabled = false; }
         }
-    </script>
-</body>
-</html>
+
+        window.saveDraft = async function() {
+            const content = document.getElementById('pContent').innerHTML;
+            const title = document.getElementById('pTitle').value || "제목 없음";
+            const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, status: 'draft', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            try {
+                if (editId) await db.collection('posts').doc(editId).update(postData);
+                else { const res = await db.collection('posts').add(postData); editId = res.id; }
+                alert('서버에 임시 저장되었습니다.');
+            } catch(e) { alert('실패: ' + e.message); }
+        }
+
+        window.execCmd = (c, v=null) => { document.execCommand(c, false, v); document.getElementById('pContent').focus(); if(c==='foreColor') hidePalette(); };
+        window.setFontSize = (s) => { document.execCommand('fontSize', false, s); document.getElementById('pContent').focus(); };
+        window.insertLink = () => { const u = prompt("URL:"); if(u) window.execCmd('createLink', u); };
+        window.insertVideo = () => { const u = prompt("YouTube URL:"); if(u) { const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); if(id) window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); } };
     </script>
 </body>
 </html>

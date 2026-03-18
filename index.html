@@ -120,7 +120,7 @@
             apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
             authDomain: "fitflunce.firebaseapp.com",
             projectId: "fitflunce",
-            storageBucket: "fitflunce.firebasestorage.app",
+            storageBucket: "fitflunce.appspot.com",
             messagingSenderId: "186695294427",
             appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe"
         };
@@ -205,13 +205,22 @@
                     if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
                 }
 
-                // 게시글 로드 (임시저장 글 제외)
-                const snap = await db.collection('posts')
-                    .where('status', '!=', 'draft')
-                    .orderBy('status')
-                    .orderBy('sortIndex', 'asc')
-                    .get();
-                const ps = []; snap.forEach(d => { var data = d.data(); data.id = d.id; ps.push(data); });
+                // 게시글 로드 (안전하게 모든 데이터를 가져온 뒤 JS에서 정렬 및 필터링)
+                const snap = await db.collection('posts').get();
+                let ps = []; 
+                snap.forEach(d => { 
+                    var data = d.data(); 
+                    data.id = d.id; 
+                    
+                    // 1. 임시저장('draft') 상태가 아니어야 함
+                    // 2. 홈페이지 노출(showHome)이 true이거나 아직 설정되지 않은(undefined) 상태여야 함 (기존글 호환)
+                    if(data.status !== 'draft' && data.showHome !== false) {
+                        ps.push(data);
+                    }
+                });
+
+                // 순서(sortIndex)에 따라 정렬
+                ps.sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0));
 
                 ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {
                     const el = document.getElementById('list-' + c);
@@ -226,7 +235,7 @@
                         el.innerHTML = '<p style="color:#444; padding:20px;">콘텐츠 준비 중</p>';
                     }
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("데이터 로딩 오류:", e); }
         };
     </script>
 </body>

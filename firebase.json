@@ -12,7 +12,8 @@
         "destination": "/admin.html"
       }
     ],
-    "cleanUrls": true
+    "cleanUrls": true,
+    "trailingSlash": false
   },
   "firestore": {
     "rules": "firestore.rules",

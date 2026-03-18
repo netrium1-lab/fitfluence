@@ -8,12 +8,10 @@
     <meta property="og:title" content="FIT-FLUENCE GROUP">
     <meta property="og:description" content="핏플루언서그룹 건강재테크">
     <meta property="og:image" content="https://fitflunce.web.app/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
     <meta property="og:url" content="https://fitflunce.web.app/">
     <meta property="og:type" content="website">
     
-    <title>핏플루언서그룹 건강재테크</title>
+    <title>FIT-FLUENCE GROUP</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -38,33 +36,18 @@
         .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
         .section { padding: 50px 0; border-bottom: 1px solid #111; }
         .section-title { font-size: 1.6rem; font-weight: 800; color: var(--gold); margin-bottom: 25px; border-left: 4px solid var(--gold); padding-left: 15px; }
+        
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
-        .card-img { width: 100%; height: 200px; object-fit: cover; }
+        .card-img-wrap { width: 100%; height: 200px; overflow: hidden; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; }
         .card-body { padding: 20px; }
         .card-body h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff; }
-
-        /* 커뮤니티 전용 모델 3: 뉴스형 스타일 */
-        .news-list { display: flex; flex-direction: column; gap: 15px; }
-        .news-item { display: flex; justify-content: space-between; align-items: center; background: #121212; padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.3s; gap: 20px; text-align: left; }
-        .news-item:hover { background: #1a1a1a; transform: translateY(-3px); border-color: var(--gold); }
-        .news-text { flex: 1; }
-        .news-date { color: #666; font-size: 0.85rem; margin-bottom: 8px; }
-        .news-title { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 10px; line-height: 1.4; }
-        .news-excerpt { color: #aaa; font-size: 0.95rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .news-thumb { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; flex-shrink: 0; border: 1px solid #222; }
-        .news-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-        @media (max-width: 768px) {
-            .news-item { padding: 20px; gap: 15px; }
-            .news-title { font-size: 1.1rem; }
-            .news-thumb { width: 80px; height: 80px; }
-        }
 
         .footer-promo { background: #000; padding: 80px 20px; text-align: center; }
         .tv-btn { display: inline-flex; align-items: center; justify-content: center; padding: 22px 0; width: 100%; max-width: 350px; border-radius: 60px; background: #ff0000; color: #fff; text-decoration: none; font-weight: 900; font-size: 1.2rem; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; overflow-y: auto; padding: 20px 10px; }
         .modal-content { background: #111; padding: 30px 20px; border-radius: 25px; width: 95%; max-width: 550px; border: 1px solid var(--gold); margin: 20px auto; }
         .survey-group { margin-bottom: 25px; border-bottom: 1px solid #222; padding-bottom: 15px; }
         .survey-group b { display: block; margin-bottom: 15px; color: var(--gold); font-size: 1.1rem; }
@@ -81,8 +64,6 @@
             .cta-wrap { flex-direction: row; }
             .hero { height: 100vh; }
             .main-cta, .sub-cta, .tv-btn { width: auto; padding: 24px 70px; }
-            .post-inner { padding: 60px; }
-            .close-post-btn { width: auto; margin-left: auto; display: block; }
         }
     </style>
 </head>
@@ -93,21 +74,21 @@
 
     <section class="hero-banners">
         <div class="cta-wrap">
-            <button class="main-cta" onclick="openSurvey()">혈액검사분석신청</button>
-            <button class="sub-cta" onclick="scrollToCommunity()">프로모션 이벤트</button>
+            <button class="main-cta" onclick="openSurvey()">혈액검사 분석방법 신청</button>
+            <button class="sub-cta" onclick="scrollToBottom()">홍보채널 이동</button>
         </div>
     </section>
 
     <div class="container">
+        <div class="section"><h2 class="section-title">FIT-FLUENCE GROUP 공지사항</h2><div id="list-프리미엄 카드형" class="card-grid"></div></div>
         <div class="section"><h2 class="section-title">건강재테크</h2><div id="list-건강재테크" class="card-grid"></div></div>
         <div class="section"><h2 class="section-title">핏솔루션</h2><div id="list-핏솔루션" class="card-grid"></div></div>
         <div class="section"><h2 class="section-title">맞춤건강안내</h2><div id="list-맞춤건강안내" class="card-grid"></div></div>
-        <div class="section" id="comm"><h2 class="section-title">커뮤니티</h2><div id="list-커뮤니티" class="card-grid"></div></div>
     </div>
 
-    <section class="footer-promo">
+    <section id="promoSection" class="footer-promo">
         <h2 style="color:var(--gold); margin-bottom:40px; font-size:1.8rem; font-weight:900;">FIT-FLUENCE GROUP</h2>
-        <a href="https://youtube.com/@fitfluence" id="link-tv" class="tv-btn" target="_blank">핏플루언서유튜브채널</a>
+        <a href="https://youtube.com/@fitfluence" id="link-tv" class="tv-btn" target="_blank">핏플루언서홍보채널</a>
     </section>
 
     <div id="surveyModal" class="modal">
@@ -133,22 +114,15 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM",
-            authDomain: "fitflunce.firebaseapp.com",
-            projectId: "fitflunce",
-            storageBucket: "fitflunce.appspot.com",
-            messagingSenderId: "186695294427",
-            appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.firebasestorage.app", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        function enterAdmin() { var pw = prompt('보안 코드'); if(pw === "7777") { sessionStorage.setItem('fit_auth','true'); location.href='admin.html'; } }
+        function enterAdmin() { var pw = prompt('보안 코드'); if(pw === "7777") { sessionStorage.setItem('fit_auth','true'); location.href='/admin'; } }
         function sel(el) { var opts = el.parentElement.querySelectorAll('.opt'); opts.forEach(o => o.classList.remove('act')); el.classList.add('act'); }
         function closeSurvey() { document.getElementById('surveyModal').style.display='none'; document.body.style.overflow='auto'; }
         function closePost() { document.getElementById('postModal').style.display='none'; document.body.style.overflow='auto'; }
-        function scrollToCommunity() { var c = document.getElementById('comm'); if(c) c.scrollIntoView({behavior:'smooth'}); }
+        function scrollToBottom() { document.getElementById('promoSection').scrollIntoView({behavior:'smooth'}); }
 
         async function openSurvey() {
             try {
@@ -170,9 +144,7 @@
         async function submitSurvey() {
             const name = document.getElementById('uName').value;
             const phone = document.getElementById('uPhone').value;
-            const other = document.getElementById('uOther').value;
             if(!name || !phone) return alert('성함과 연락처를 입력해주세요.');
-
             const groups = document.querySelectorAll('.survey-group');
             const answers = [];
             groups.forEach(g => {
@@ -180,16 +152,10 @@
                 const act = g.querySelector('.opt.act');
                 if(act) answers.push(`${q}: ${act.innerText}`);
             });
-            if(other) answers.push(`기타: ${other}`);
-
             try {
-                await db.collection('consults').add({
-                    name, phone, answers,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert('정상 접수되었습니다!');
-                closeSurvey();
-            } catch(e) { alert('오류가 발생했습니다: ' + e.message); }
+                await db.collection('consults').add({ name, phone, answers, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('정상 접수되었습니다!'); closeSurvey();
+            } catch(e) { alert('오류: ' + e.message); }
         }
 
         async function viewPost(id) {
@@ -199,79 +165,66 @@
                 const p = doc.data();
                 document.getElementById('modalCate').innerText = p.category;
                 document.getElementById('modalTitle').innerText = p.title;
-                document.getElementById('modalBody').innerHTML = p.content;
+                
+                let bodyHtml = p.content;
+                if(p.fileUrl) {
+                    bodyHtml += `
+                        <div style="margin-top:40px; padding:25px; background:#1a1a1a; border-radius:15px; border:1px solid #333; text-align:center;">
+                            <p style="color:#999; font-size:0.9rem; margin-bottom:15px;">🔒 보안 첨부파일이 포함되어 있습니다.</p>
+                            <button onclick="downloadSecureFile('${p.fileUrl}', '${p.filePw || ''}')" 
+                                style="background:var(--gold); color:#000; border:none; padding:15px 30px; border-radius:10px; font-weight:900; cursor:pointer; font-size:1rem; width:100%;">
+                                📁 첨부파일 다운로드 받기
+                            </button>
+                        </div>`;
+                }
+                
+                document.getElementById('modalBody').innerHTML = bodyHtml;
                 document.getElementById('postModal').style.display = 'block';
                 document.body.style.overflow = 'hidden';
             } catch(e) { console.error(e); }
         }
 
+        function downloadSecureFile(url, correctPw) {
+            if(!correctPw) {
+                window.open(url, '_blank');
+                return;
+            }
+            const userPw = prompt("다운로드 비밀번호를 입력하세요.");
+            if(userPw === correctPw) {
+                window.open(url, '_blank');
+            } else if(userPw !== null) {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
+        }
+
         window.onload = async function() {
             try {
-                // 사이트 설정 로드
                 const cfgDoc = await db.collection('config').doc('site').get();
                 if(cfgDoc.exists) {
                     const cfg = cfgDoc.data();
                     if(cfg.logo) document.getElementById('mainLogo').innerText = cfg.logo;
-                    if(cfg.img) {
-                        const hero = document.getElementById('mainHero');
-                        hero.style.backgroundImage = `url("${cfg.img}")`;
-                        hero.style.backgroundSize = "cover";
-                        hero.style.backgroundPosition = "center";
-                        hero.style.backgroundRepeat = "no-repeat";
-                    }
+                    if(cfg.img) document.getElementById('mainHero').style.backgroundImage = `url("${cfg.img}")`;
                     if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
                 }
 
-                // 게시글 로드 (안전하게 모든 데이터를 가져온 뒤 JS에서 정렬 및 필터링)
                 const snap = await db.collection('posts').get();
                 let ps = []; 
                 snap.forEach(d => { 
-                    var data = d.data(); 
-                    data.id = d.id; 
-                    
-                    // 1. 임시저장('draft') 상태가 아니어야 함
-                    // 2. 홈페이지 노출(showHome)이 true이거나 아직 설정되지 않은(undefined) 상태여야 함 (기존글 호환)
-                    if(data.status !== 'draft' && data.showHome !== false) {
-                        ps.push(data);
-                    }
+                    var data = d.data(); data.id = d.id; 
+                    if(data.status !== 'draft' && data.showHome !== false) ps.push(data);
                 });
-
-                // 순서(sortIndex)에 따라 정렬
                 ps.sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0));
 
-                ['건강재테크', '핏솔루션', '맞춤건강안내', '커뮤니티'].forEach(c => {
+                ['건강재테크', '핏솔루션', '맞춤건강안내', '프리미엄 카드형'].forEach(c => {
                     const el = document.getElementById('list-' + c);
+                    if(!el) return;
                     const filtered = ps.filter(p => p.category === c);
-                    
                     if(filtered.length) {
-                        if(c === '커뮤니티') {
-                            // 커뮤니티 전용: 모델 3 (뉴스형 리스트)
-                            el.className = "news-list";
-                            el.innerHTML = filtered.map(p => {
-                                // 본문에서 HTML 태그를 제거하고 순수 텍스트만 추출 (요약용)
-                                const tempDiv = document.createElement("div");
-                                tempDiv.innerHTML = p.content || "";
-                                const plainText = tempDiv.textContent || tempDiv.innerText || "";
-                                
-                                return `
-                                <div class="news-item" onclick="viewPost('${p.id}')">
-                                    <div class="news-text">
-                                        <p class="news-date">${p.date || ''}</p>
-                                        <h3 class="news-title">${p.title}</h3>
-                                        <p class="news-excerpt">${plainText}</p>
-                                    </div>
-                                    ${p.image ? `<div class="news-thumb"><img src="${p.image}"></div>` : ''}
-                                </div>`;
-                            }).join('');
-                        } else {
-                            // 일반 카테고리: 기존 프리미엄 카드형
-                            el.className = "card-grid";
-                            el.innerHTML = filtered.map(p => `
-                                <div class="card" onclick="viewPost('${p.id}')">
-                                    <img src="${p.image || ''}" class="card-img" onerror="this.style.display='none'">
-                                    <div class="card-body"><h3>${p.title}</h3><p style="color:#666; font-size:0.85rem;">${p.date || ''}</p></div>
-                                </div>`).join('');
-                        }
+                        el.innerHTML = filtered.map(p => `
+                            <div class="card" onclick="viewPost('${p.id}')">
+                                <div class="card-img-wrap"><img src="${p.image || ''}" class="card-img" onerror="this.parentElement.style.display='none'"></div>
+                                <div class="card-body"><h3>${p.title}</h3><p style="color:#666; font-size:0.85rem;">${p.date || ''}</p></div>
+                            </div>`).join('');
                     } else {
                         el.innerHTML = '<p style="color:#444; padding:20px;">콘텐츠 준비 중</p>';
                     }

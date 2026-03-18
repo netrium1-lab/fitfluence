@@ -18,7 +18,7 @@ git push origin main
 
 # 3. Firebase 사이트 배포
 echo "🌐 Firebase 사이트를 업데이트합니다..."
-firebase deploy
+firebase deploy --project fitflunce
 
 echo "✅ 모든 작업이 완료되었습니다!"
-echo "🔗 배포된 사이트: https://9000-firebase-fitfluence-1773480657966.cluster-y75up3teuvc62qmnwys4deqv6y.cloudworkstations.dev/"
+echo "🔗 배포된 사이트: https://fitflunce.web.app"

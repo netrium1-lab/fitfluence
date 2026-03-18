@@ -22,7 +22,7 @@
         .top-bar { padding: 10px 20px; background: #1a1a1a; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
         .logo-mini { color: var(--gold); font-weight: 900; font-size: 1.1rem; margin-right: 20px; }
         .input-title { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 8px; font-size: 1rem; }
-        .select-cate { width: 150px; background: #333; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; }
+        .select-cate { width: 180px; background: #333; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .workspace { flex: 1; display: flex; overflow: hidden; }
         
@@ -59,14 +59,16 @@
         #pContent blockquote { border-left: 5px solid var(--gold); padding: 15px 25px; margin: 25px 0; background: rgba(212,175,55,0.05); font-style: italic; color: #ccc; }
         #pContent img { max-width: 100%; border-radius: 12px; margin: 30px auto; display: block; }
 
-        .bottom-bar { padding: 10px 20px; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+        .bottom-bar { padding: 10px 20px; background: #1a1a1a; border-top: 1px solid #333; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+        .file-zone { display: flex; align-items: center; gap: 10px; margin-right: auto; background: #222; padding: 5px 15px; border-radius: 10px; border: 1px dashed #444; }
+        .file-zone label { font-size: 0.8rem; color: var(--gold); font-weight: bold; }
+        .file-zone input[type="text"] { background: #000; border: 1px solid #444; color: #fff; padding: 5px 10px; border-radius: 5px; width: 120px; font-size: 0.8rem; }
         .btn { padding: 10px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 0.9rem; border: none; }
         .btn-cancel { background: #333; color: #999; }
         .btn-draft-load { background: #444; color: var(--gold); border: 1px solid var(--gold); }
         .btn-draft-save { background: #222; color: #ccc; border: 1px solid #444; }
         .btn-save { background: var(--gold); color: #000; }
 
-        /* 임시저장 목록 팝업 */
         .draft-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; }
         .draft-content { background: #1a1a1a; border: 1px solid var(--gold); border-radius: 20px; width: 90%; max-width: 500px; padding: 30px; }
         .draft-list { max-height: 300px; overflow-y: auto; margin: 20px 0; }
@@ -96,6 +98,7 @@
                 <option value="건강재테크">건강재테크</option>
                 <option value="핏솔루션">핏솔루션</option>
                 <option value="맞춤건강안내">맞춤건강안내</option>
+                <option value="프리미엄 카드형">프리미엄 카드형</option>
                 <option value="커뮤니티">커뮤니티</option>
             </select>
             <input type="text" id="pTitle" class="input-title" placeholder="제목을 입력하세요">
@@ -179,7 +182,12 @@
         </div>
 
         <div class="bottom-bar">
-            <button class="btn btn-cancel" onclick="location.href='admin.html'">취소</button>
+            <div class="file-zone">
+                <label>📁 파일첨부</label>
+                <input type="file" id="attachIn" style="font-size:0.7rem; width:150px; color:#999;">
+                <input type="text" id="attachPw" placeholder="다운로드 비번">
+            </div>
+            <button class="btn btn-cancel" onclick="location.href='/admin'">취소</button>
             <button class="btn btn-draft-load" id="loadDraftBtn" onclick="openDrafts()">📂 임시저장 불러오기</button>
             <button class="btn btn-draft-save" onclick="window.saveDraft()">💾 현재 글 임시저장</button>
             <button class="btn btn-save" onclick="window.savePost()" id="saveBtn">발행하기</button>
@@ -190,7 +198,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.appspot.com", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
+        const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.firebasestorage.app", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
@@ -204,10 +212,14 @@
                 if (doc.exists) {
                     const data = doc.data();
                     document.getElementById('pTitle').value = data.title;
-                    document.getElementById('pCategory').value = data.category;
+                    document.getElementById('pCategory').value = data.category || "건강재테크";
                     document.getElementById('pContent').innerHTML = data.content;
                     mainThumb = data.image;
                     if(mainThumb) addImgToGrid(mainThumb, false);
+                    if(data.fileUrl) {
+                        window.currentFileUrl = data.fileUrl;
+                        document.getElementById('attachPw').value = data.filePw || "";
+                    }
                 }
             }
         };
@@ -220,32 +232,19 @@
             const list = document.getElementById('draftList');
             modal.style.display = 'flex';
             list.innerHTML = "임시저장된 글을 찾는 중...";
-            
             try {
-                // 색인 오류를 피하기 위해 orderBy를 제거하고 status로만 필터링합니다.
                 const snap = await db.collection('posts').where('status', '==', 'draft').get();
                 if(snap.empty) { list.innerHTML = "임시저장된 글이 없습니다."; return; }
-                
                 let drafts = [];
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    drafts.push({ id: doc.id, ...data });
-                });
-
-                // 브라우저에서 직접 최신순으로 정렬합니다.
-                drafts.sort((a, b) => {
-                    const timeA = a.updatedAt ? a.updatedAt.toMillis() : 0;
-                    const timeB = b.updatedAt ? b.updatedAt.toMillis() : 0;
-                    return timeB - timeA;
-                });
-                
+                snap.forEach(doc => { const data = doc.data(); drafts.push({ id: doc.id, ...data }); });
+                drafts.sort((a, b) => (b.updatedAt ? b.updatedAt.toMillis() : 0) - (a.updatedAt ? a.updatedAt.toMillis() : 0));
                 list.innerHTML = "";
                 drafts.forEach(d => {
                     const item = document.createElement('div');
                     item.className = 'draft-item';
                     item.innerHTML = `<b>${d.title || '제목 없음'}</b><span>${d.updatedAt ? d.updatedAt.toDate().toLocaleString() : '날짜 정보 없음'}</span>`;
                     item.onclick = () => {
-                        if(confirm('현재 작성 중인 내용이 사라지고 임시저장된 글을 불러옵니다. 진행할까요?')) {
+                        if(confirm('작성 중인 내용을 지우고 불러올까요?')) {
                             document.getElementById('pTitle').value = d.title || "";
                             document.getElementById('pCategory').value = d.category || "건강재테크";
                             document.getElementById('pContent').innerHTML = d.content || "";
@@ -317,14 +316,7 @@
         function addImgToGrid(src, isUploading) {
             const div = document.createElement('div');
             div.className = 'img-item' + (isUploading ? ' uploading' : '');
-            div.innerHTML = `
-                <button class="del-btn" onclick="this.parentElement.remove()">X</button>
-                <img src="${src}" onclick="window.insertBody('${src}')">
-                <div class="img-controls">
-                    <button class="img-btn btn-ins" onclick="window.insertBody('${src}')">본문 삽입</button>
-                    <button class="img-btn btn-rep" onclick="window.setMainImg('${src}', this.parentElement.parentElement)">대표 지정</button>
-                </div>
-            `;
+            div.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">X</button><img src="${src}" onclick="window.insertBody('${src}')"><div class="img-controls"><button class="img-btn btn-ins" onclick="window.insertBody('${src}')">본문 삽입</button><button class="img-btn btn-rep" onclick="window.setMainImg('${src}', this.parentElement.parentElement)">대표 지정</button></div>`;
             document.getElementById('imgGrid').appendChild(div);
             return div;
         }
@@ -348,24 +340,108 @@
             if (new Blob([content]).size > 950000) return alert("❌ [용량 초과] 사진이 너무 많습니다.");
             const title = document.getElementById('pTitle').value;
             if(!title) return alert("제목을 입력하세요!");
-            document.getElementById('saveBtn').disabled = true;
-            const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, date: new Date().toLocaleDateString(), status: 'published', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            
+            const statusInfo = document.getElementById('statusInfo');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            saveBtn.disabled = true;
+            statusInfo.innerText = "파일 업로드 중...";
+            statusInfo.style.display = 'block';
+
+            let fileUrl = window.currentFileUrl || "";
+            const fileInput = document.getElementById('attachIn');
+            
             try {
+                if(fileInput.files[0]) {
+                    const f = fileInput.files[0];
+                    if (f.size > 20 * 1024 * 1024) { 
+                        alert("❌ [용량 초과] 파일이 너무 큽니다. (최대 20MB)");
+                        throw new Error("size_limit");
+                    }
+                    statusInfo.innerText = "파일 실제 업로드 중 (Firebase Storage)...";
+                    const ref = storage.ref().child(`attachments/${Date.now()}_${f.name}`);
+                    
+                    // 업로드 상태 감시 추가
+                    const uploadTask = ref.put(f);
+                    
+                    // 업로드 완료까지 대기
+                    const snap = await uploadTask;
+                    fileUrl = await snap.ref.getDownloadURL();
+                    console.log("Upload Success:", fileUrl);
+                }
+
+                statusInfo.innerText = "데이터 저장 중 (Firestore)...";
+                const postData = { 
+                    title, 
+                    category: document.getElementById('pCategory').value, 
+                    content, 
+                    image: mainThumb, 
+                    fileUrl: fileUrl,
+                    filePw: document.getElementById('attachPw').value || "",
+                    date: new Date().toLocaleDateString(), 
+                    status: 'published', 
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                };
+
                 if (editId) await db.collection('posts').doc(editId).update(postData);
                 else await db.collection('posts').add(postData);
-                alert('정상 발행되었습니다!'); location.href = 'admin.html';
-            } catch(e) { alert('오류: ' + e.message); document.getElementById('saveBtn').disabled = false; }
+                
+                statusInfo.style.display = 'none';
+                alert('정상 발행되었습니다!'); 
+                location.href = '/admin';
+            } catch(e) { 
+                console.error("Critical Error:", e);
+                statusInfo.style.display = 'none';
+                saveBtn.disabled = false;
+                if(e.message !== "size_limit") {
+                    alert('🚨 업로드/저장 실패!\n원인: ' + e.message + '\n\n(참고: 주소 설정이나 권한 문제일 수 있습니다.)');
+                }
+            }
         }
 
         window.saveDraft = async function() {
             const content = document.getElementById('pContent').innerHTML;
             const title = document.getElementById('pTitle').value || "제목 없음";
-            const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, status: 'draft', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            const statusInfo = document.getElementById('statusInfo');
+            
+            statusInfo.innerText = "임시저장 중...";
+            statusInfo.style.display = 'block';
+            
+            let fileUrl = window.currentFileUrl || "";
+            const fileInput = document.getElementById('attachIn');
+            
             try {
+                if(fileInput.files[0]) {
+                    const f = fileInput.files[0];
+                    if (f.size > 20 * 1024 * 1024) { 
+                        alert("❌ [용량 초과] 파일이 너무 큽니다. (최대 20MB)");
+                        throw new Error("size_limit");
+                    }
+                    const ref = storage.ref().child(`attachments/${Date.now()}_${f.name}`);
+                    const snap = await ref.put(f);
+                    fileUrl = await snap.ref.getDownloadURL();
+                }
+
+                const postData = { 
+                    title, 
+                    category: document.getElementById('pCategory').value, 
+                    content, 
+                    image: mainThumb, 
+                    fileUrl: fileUrl,
+                    filePw: document.getElementById('attachPw').value || "",
+                    status: 'draft', 
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                };
+
                 if (editId) await db.collection('posts').doc(editId).update(postData);
                 else { const res = await db.collection('posts').add(postData); editId = res.id; }
-                alert('서버에 임시 저장되었습니다.');
-            } catch(e) { alert('실패: ' + e.message); }
+                
+                statusInfo.style.display = 'none';
+                alert('임시 저장되었습니다.');
+            } catch(e) { 
+                statusInfo.style.display = 'none';
+                if(e.message !== "size_limit") alert('실패: ' + e.message); 
+            }
         }
 
         window.execCmd = (c, v=null) => { document.execCommand(c, false, v); document.getElementById('pContent').focus(); if(c==='foreColor') hidePalette(); };

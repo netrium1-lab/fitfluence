@@ -184,7 +184,7 @@
                         <button class="move-btn" onclick="movePost(${i}, -1)">▲</button><br>
                         <button class="move-btn" onclick="movePost(${i}, 1)">▼</button>
                     </td>
-                    <td>${p.category}</td>
+                    <td>${p.category === '커뮤니티' ? '<span style="background:#000; color:var(--gold); padding:3px 8px; border-radius:5px; font-size:0.75rem; font-weight:bold;">커뮤니티</span>' : p.category}</td>
                     <td><b>${p.title}</b> ${p.status === 'draft' ? '<span style="color:red;font-size:0.7rem;">[임시]</span>' : ''}</td>
                     <td>
                         <button onclick="toggleExpose('${p.id}', ${p.showHome !== false})" class="btn-mini ${p.showHome !== false ? 'active' : ''}" style="margin-bottom:5px; width:100px;">

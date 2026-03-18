@@ -4,22 +4,21 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      ".git/**",
-      "deploy.sh"
+      "**/node_modules/**"
     ],
-    "cleanUrls": true,
-    "trailingSlash": false,
     "rewrites": [
-      { "source": "/admin", "destination": "/admin.html" },
-      { "source": "/editor", "destination": "/editor.html" }
-    ]
-  },
-  "storage": {
-    "rules": "storage.rules"
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      }
+    ],
+    "cleanUrls": true
   },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

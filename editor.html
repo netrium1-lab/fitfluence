@@ -172,6 +172,7 @@
                         <button class="tool-btn" onclick="window.execCmd('formatBlock', 'blockquote')">❝ 인용구</button>
                         <button class="tool-btn" onclick="window.insertLink()">🔗 링크</button>
                         <button class="tool-btn" onclick="window.insertVideo()">🎬 영상</button>
+                        <button class="tool-btn" onclick="window.insertExternalImg()" style="background:var(--gold); color:#000;">🖼️ 사진 주소 넣기</button>
                     </div>
                 </div>
 
@@ -447,6 +448,14 @@
         window.execCmd = (c, v=null) => { document.execCommand(c, false, v); document.getElementById('pContent').focus(); if(c==='foreColor') hidePalette(); };
         window.setFontSize = (s) => { document.execCommand('fontSize', false, s); document.getElementById('pContent').focus(); };
         window.insertLink = () => { const u = prompt("URL:"); if(u) window.execCmd('createLink', u); };
+        window.insertExternalImg = () => {
+            const u = prompt("이미지 주소(URL)를 입력하세요:\n(예: https://.../image.jpg)");
+            if(u) {
+                const tag = `<img src="${u}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;" onerror="alert('유효하지 않은 이미지 주소입니다.')">`;
+                document.getElementById('pContent').focus();
+                document.execCommand('insertHTML', false, tag + '<br>');
+            }
+        };
         window.insertVideo = () => { const u = prompt("YouTube URL:"); if(u) { const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); if(id) window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); } };
     </script>
 </body>

@@ -185,8 +185,10 @@
         <div class="bottom-bar">
             <div class="file-zone">
                 <label>📁 파일첨부</label>
-                <input type="file" id="attachIn" style="font-size:0.7rem; width:150px; color:#999;">
-                <input type="text" id="attachPw" placeholder="다운로드 비번">
+                <input type="file" id="attachIn" style="font-size:0.7rem; width:120px; color:#999;">
+                <span style="color:#555; font-size:0.8rem;">또는 주소입력:</span>
+                <input type="text" id="manualFileUrl" placeholder="https://..." style="background:#000; border:1px solid #444; color:#fff; padding:5px; border-radius:5px; width:150px; font-size:0.8rem;">
+                <input type="text" id="attachPw" placeholder="비번" style="width:60px;">
             </div>
             <button class="btn btn-cancel" onclick="location.href='/admin'">취소</button>
             <button class="btn btn-draft-load" id="loadDraftBtn" onclick="openDrafts()">📂 임시저장 불러오기</button>
@@ -206,8 +208,33 @@
         let mainThumb = ""; 
         let editId = new URLSearchParams(location.search).get('id');
         let uploadCount = 0;
+        let savedSelection = null;
+
+        // 선택 영역 저장 및 복구용 유틸리티
+        function saveSelection() {
+            if (window.getSelection) {
+                const sel = window.getSelection();
+                if (sel.getRangeAt && sel.rangeCount) {
+                    savedSelection = sel.getRangeAt(0);
+                }
+            }
+        }
+
+        function restoreSelection() {
+            if (savedSelection) {
+                if (window.getSelection) {
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(savedSelection);
+                }
+            }
+        }
 
         window.onload = async function() {
+            // 에디터 클릭 시 선택 영역 업데이트
+            document.getElementById('pContent').addEventListener('mouseup', saveSelection);
+            document.getElementById('pContent').addEventListener('keyup', saveSelection);
+            
             if (editId) {
                 const doc = await db.collection('posts').doc(editId).get();
                 if (doc.exists) {
@@ -219,14 +246,55 @@
                     if(mainThumb) addImgToGrid(mainThumb, false);
                     if(data.fileUrl) {
                         window.currentFileUrl = data.fileUrl;
+                        document.getElementById('manualFileUrl').value = data.fileUrl;
                         document.getElementById('attachPw').value = data.filePw || "";
                     }
                 }
             }
         };
 
-        function togglePalette(e) { e.stopPropagation(); const p = document.getElementById('palette'); p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; }
+        function togglePalette(e) { 
+            e.stopPropagation(); 
+            saveSelection(); // 팔레트 열기 전 선택 영역 저장
+            const p = document.getElementById('palette'); 
+            p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; 
+        }
         function hidePalette(e) { document.getElementById('palette').style.display = 'none'; }
+
+        // 명령 실행 통합 함수 (강화됨)
+        window.execCmd = (c, v=null) => { 
+            document.getElementById('pContent').focus();
+            if (savedSelection) restoreSelection();
+            
+            // 이미지 정렬 특수 처리
+            if (c === 'justifyCenter' || c === 'justifyLeft' || c === 'justifyRight') {
+                const sel = window.getSelection();
+                if (sel.rangeCount > 0) {
+                    const node = sel.anchorNode.parentNode;
+                    if (node && node.tagName === 'IMG' || (sel.anchorNode.childNodes && sel.anchorNode.childNodes[sel.anchorOffset] && sel.anchorNode.childNodes[sel.anchorOffset].tagName === 'IMG')) {
+                        const targetImg = node.tagName === 'IMG' ? node : sel.anchorNode.childNodes[sel.anchorOffset];
+                        const align = c.replace('justify', '').toLowerCase();
+                        targetImg.style.display = 'block';
+                        if (align === 'center') { targetImg.style.margin = '30px auto'; }
+                        else if (align === 'left') { targetImg.style.margin = '30px 0'; targetImg.style.marginLeft = '0'; }
+                        else if (align === 'right') { targetImg.style.margin = '30px 0'; targetImg.style.marginLeft = 'auto'; targetImg.style.marginRight = '0'; }
+                        saveSelection();
+                        return;
+                    }
+                }
+            }
+            
+            document.execCommand(c, false, v); 
+            saveSelection(); 
+            if(c==='foreColor') hidePalette(); 
+        };
+
+        window.setFontSize = (s) => { 
+            document.getElementById('pContent').focus();
+            if (savedSelection) restoreSelection();
+            document.execCommand('fontSize', false, s); 
+            saveSelection();
+        };
 
         async function openDrafts() {
             const modal = document.getElementById('draftModal');
@@ -333,7 +401,9 @@
         window.insertBody = function(src) {
             const tag = `<img src="${src}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;">`;
             document.getElementById('pContent').focus();
+            if (savedSelection) restoreSelection();
             document.execCommand('insertHTML', false, tag + '<br>');
+            saveSelection();
         }
 
         window.savePost = async function() {
@@ -349,7 +419,7 @@
             statusInfo.innerText = "파일 업로드 중...";
             statusInfo.style.display = 'block';
 
-            let fileUrl = window.currentFileUrl || "";
+            let fileUrl = document.getElementById('manualFileUrl').value || window.currentFileUrl || "";
             const fileInput = document.getElementById('attachIn');
             
             try {
@@ -361,14 +431,9 @@
                     }
                     statusInfo.innerText = "파일 실제 업로드 중 (Firebase Storage)...";
                     const ref = storage.ref().child(`attachments/${Date.now()}_${f.name}`);
-                    
-                    // 업로드 상태 감시 추가
                     const uploadTask = ref.put(f);
-                    
-                    // 업로드 완료까지 대기
                     const snap = await uploadTask;
                     fileUrl = await snap.ref.getDownloadURL();
-                    console.log("Upload Success:", fileUrl);
                 }
 
                 statusInfo.innerText = "데이터 저장 중 (Firestore)...";
@@ -408,7 +473,7 @@
             statusInfo.innerText = "임시저장 중...";
             statusInfo.style.display = 'block';
             
-            let fileUrl = window.currentFileUrl || "";
+            let fileUrl = document.getElementById('manualFileUrl').value || window.currentFileUrl || "";
             const fileInput = document.getElementById('attachIn');
             
             try {
@@ -445,18 +510,38 @@
             }
         }
 
-        window.execCmd = (c, v=null) => { document.execCommand(c, false, v); document.getElementById('pContent').focus(); if(c==='foreColor') hidePalette(); };
-        window.setFontSize = (s) => { document.execCommand('fontSize', false, s); document.getElementById('pContent').focus(); };
-        window.insertLink = () => { const u = prompt("URL:"); if(u) window.execCmd('createLink', u); };
+        window.insertLink = () => { 
+            const u = prompt("URL:"); 
+            if(u) {
+                document.getElementById('pContent').focus();
+                if (savedSelection) restoreSelection();
+                document.execCommand('createLink', false, u);
+                saveSelection();
+            }
+        };
+
         window.insertExternalImg = () => {
             const u = prompt("이미지 주소(URL)를 입력하세요:\n(예: https://.../image.jpg)");
             if(u) {
                 const tag = `<img src="${u}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;" onerror="alert('유효하지 않은 이미지 주소입니다.')">`;
                 document.getElementById('pContent').focus();
+                if (savedSelection) restoreSelection();
                 document.execCommand('insertHTML', false, tag + '<br>');
+                saveSelection();
             }
         };
-        window.insertVideo = () => { const u = prompt("YouTube URL:"); if(u) { const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); if(id) window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); } };
+        window.insertVideo = () => { 
+            const u = prompt("YouTube URL:"); 
+            if(u) { 
+                const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); 
+                if(id) {
+                    document.getElementById('pContent').focus();
+                    if (savedSelection) restoreSelection();
+                    window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); 
+                    saveSelection();
+                }
+            } 
+        };
     </script>
 </body>
 </html>

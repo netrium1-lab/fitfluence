@@ -52,6 +52,10 @@
                 <div class="form-group"><label>로고 텍스트</label><input type="text" id="siteLogo"></div>
                 <div class="form-group"><label>🖼️ 메인 배경</label><div id="preview" onclick="document.getElementById('fIn').click()">이미지 선택</div><input type="file" id="fIn" style="display:none" onchange="window.pickHero(this)" accept="image/*"></div>
                 <button class="btn" onclick="saveDesign()">설정 저장하기</button>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn-sub" onclick="exportData()">💾 전체 데이터 백업</button>
+                    <button class="btn-sub" onclick="importData()">🔄 데이터 복구</button>
+                </div>
             </div>
         </div>
 
@@ -82,7 +86,15 @@
             </div>
         </div>
 
-        <div id="consult" class="tab"><div class="card"><h1>👤 상담 신청 명단</h1><table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table></div></div>
+        <div id="consult" class="tab">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h1>👤 상담 신청 명단</h1>
+                    <button class="btn-mini active" onclick="downloadExcel()" style="padding:10px 20px;">📊 엑셀파일 내려받기</button>
+                </div>
+                <table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table>
+            </div>
+        </div>
     </div>
 
     <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2></div>
@@ -204,6 +216,69 @@
             const snap = await db.collection('consults').orderBy('createdAt','desc').get();
             let html = ""; snap.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`; });
             document.getElementById('cList').innerHTML = html;
+        }
+
+        async function exportData() {
+            showStatus("백업 준비 중...");
+            try {
+                const data = {};
+                const collections = ['posts', 'consults', 'config'];
+                for(const c of collections) {
+                    const snap = await db.collection(c).get();
+                    data[c] = [];
+                    snap.forEach(doc => data[c].push({id: doc.id, ...doc.data()}));
+                }
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `fitfluence_backup_${new Date().toLocaleDateString()}.json`;
+                a.click();
+                hideStatus();
+                alert("백업 파일이 생성되었습니다.");
+            } catch(e) { hideStatus(); alert("백업 실패: " + e.message); }
+        }
+
+        async function importData() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                if(!confirm("복구를 진행하면 기존 데이터와 충돌할 수 있습니다. 계속할까요?")) return;
+                showStatus("데이터 복구 중...");
+                const reader = new FileReader();
+                reader.onload = async (re) => {
+                    try {
+                        const data = JSON.parse(re.target.result);
+                        for(const col in data) {
+                            for(const item of data[col]) {
+                                const {id, ...content} = item;
+                                await db.collection(col).doc(id).set(content, {merge: true});
+                            }
+                        }
+                        hideStatus(); alert("데이터 복구가 완료되었습니다. 페이지를 새로고침하세요.");
+                        location.reload();
+                    } catch(err) { hideStatus(); alert("복구 실패: " + err.message); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        async function downloadExcel() {
+            const snap = await db.collection('consults').orderBy('createdAt','desc').get();
+            let csv = "\ufeff날짜,성함,연락처,진단내용\n";
+            snap.forEach(doc => {
+                const c = doc.data();
+                const date = c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : '';
+                const answers = (c.answers||[]).join(' | ').replace(/,/g, '');
+                csv += `${date},${c.name},${c.phone},${answers}\n`;
+            });
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `상담신청자명단_${new Date().toLocaleDateString()}.csv`;
+            a.click();
         }
 
         window.onload = async function() {

@@ -45,48 +45,42 @@
         .main-editor { flex: 1; display: flex; flex-direction: column; background: #000; }
         .toolbar { background: #222; padding: 8px 15px; border-bottom: 1px solid #333; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
         .tool-group { display: flex; gap: 4px; border-right: 1px solid #444; padding-right: 8px; margin-right: 4px; align-items: center; }
-        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .tool-btn { background: #333; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; position: relative; }
         .tool-btn:hover { background: var(--gold); color: #000; }
         .tool-select { background: #333; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px; font-size: 0.8rem; }
 
-        .color-palette-container { position: relative; display: inline-block; }
-        .color-palette { display: none; position: absolute; top: 40px; left: 0; background: #222; border: 1px solid #444; padding: 10px; border-radius: 8px; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); grid-template-columns: repeat(5, 25px); gap: 5px; }
+        .popup-menu { display: none; position: absolute; top: 40px; left: 0; background: #222; border: 1px solid #444; padding: 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        .menu-title { font-size: 0.75rem; color: var(--gold); margin-bottom: 8px; display: block; font-weight: bold; }
+        .color-grid { display: grid; grid-template-columns: repeat(5, 25px); gap: 5px; margin-bottom: 15px; }
         .color-chip { width: 25px; height: 25px; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-        .color-chip:hover { transform: scale(1.1); }
+        .symbol-grid { display: grid; grid-template-columns: repeat(6, 30px); gap: 5px; width: 220px; }
+        .symbol-item { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; background: #333; font-size: 0.9rem; }
+        .symbol-item:hover { background: var(--gold); color: #000; }
 
         .content-area { flex: 1; overflow-y: auto; padding: 50px 0; background: #000; }
         #pContent { max-width: 800px; margin: 0 auto; min-height: 100%; color: #fff; font-size: 1.15rem; line-height: 1.9; outline: none; padding: 20px; }
         #pContent blockquote { border-left: 5px solid var(--gold); padding: 15px 25px; margin: 25px 0; background: rgba(212,175,55,0.05); font-style: italic; color: #ccc; }
+        #pContent hr { border: 0; height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0; }
         #pContent img { max-width: 100%; border-radius: 12px; margin: 30px auto; display: block; }
 
         .bottom-bar { padding: 10px 20px; background: #1a1a1a; border-top: 1px solid #333; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
         .file-zone { display: flex; align-items: center; gap: 10px; margin-right: auto; background: #222; padding: 5px 15px; border-radius: 10px; border: 1px dashed #444; }
-        .file-zone label { font-size: 0.8rem; color: var(--gold); font-weight: bold; }
-        .file-zone input[type="text"] { background: #000; border: 1px solid #444; color: #fff; padding: 5px 10px; border-radius: 5px; width: 120px; font-size: 0.8rem; }
         .btn { padding: 10px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 0.9rem; border: none; }
         .btn-cancel { background: #333; color: #999; }
-        .btn-draft-load { background: #444; color: var(--gold); border: 1px solid var(--gold); }
-        .btn-draft-save { background: #222; color: #ccc; border: 1px solid #444; }
         .btn-save { background: var(--gold); color: #000; }
 
         .draft-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; }
         .draft-content { background: #1a1a1a; border: 1px solid var(--gold); border-radius: 20px; width: 90%; max-width: 500px; padding: 30px; }
-        .draft-list { max-height: 300px; overflow-y: auto; margin: 20px 0; }
-        .draft-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
-        .draft-item:hover { background: #222; }
-        .draft-item b { display: block; color: var(--gold); margin-bottom: 5px; }
-        .draft-item span { font-size: 0.8rem; color: #888; }
-
         #statusInfo { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 8px 20px; border-radius: 50px; font-weight: bold; font-size: 0.85rem; display: none; z-index: 9999; }
     </style>
 </head>
-<body onclick="hidePalette(event)">
+<body onclick="hideAllMenus(event)">
     <div id="statusInfo">처리 중...</div>
     
     <div id="draftModal" class="draft-modal">
         <div class="draft-content">
             <h2 style="color:var(--gold); margin-top:0;">📂 임시 저장 불러오기</h2>
-            <div id="draftList" class="draft-list">불러오는 중...</div>
+            <div id="draftList" style="max-height:300px; overflow-y:auto; margin:20px 0;">불러오는 중...</div>
             <button class="btn btn-cancel" style="width:100%;" onclick="closeDrafts()">닫기</button>
         </div>
     </div>
@@ -133,46 +127,58 @@
                             <option value="'Nanum Myeongjo'">나눔명조</option>
                         </select>
                         <select class="tool-select" onchange="window.setFontSize(this.value)">
-                            <option value="3">크기 보통</option>
-                            <option value="1">매우 작게</option>
-                            <option value="2">작게</option>
-                            <option value="4">약간 크게</option>
-                            <option value="5">크게</option>
-                            <option value="6">매우 크게</option>
+                            <option value="3">보통</option><option value="1">매우작게</option><option value="2">작게</option><option value="4">약간크게</option><option value="5">크게</option><option value="6">매우크게</option>
                         </select>
                     </div>
                     <div class="tool-group">
                         <button class="tool-btn" onclick="window.execCmd('bold')">B</button>
                         <button class="tool-btn" onclick="window.execCmd('underline')">U</button>
-                        <div class="color-palette-container">
-                            <button class="tool-btn" onclick="togglePalette(event)" style="border-bottom: 3px solid var(--gold);">Color</button>
-                            <div id="palette" class="color-palette">
-                                <div class="color-chip" style="background:#ffffff" onclick="window.execCmd('foreColor','#ffffff')"></div>
-                                <div class="color-chip" style="background:#000000" onclick="window.execCmd('foreColor','#000000')"></div>
-                                <div class="color-chip" style="background:#D4AF37" onclick="window.execCmd('foreColor','#D4AF37')"></div>
-                                <div class="color-chip" style="background:#ff0000" onclick="window.execCmd('foreColor','#ff0000')"></div>
-                                <div class="color-chip" style="background:#ff8800" onclick="window.execCmd('foreColor','#ff8800')"></div>
-                                <div class="color-chip" style="background:#ffff00" onclick="window.execCmd('foreColor','#ffff00')"></div>
-                                <div class="color-chip" style="background:#00ff00" onclick="window.execCmd('foreColor','#00ff00')"></div>
-                                <div class="color-chip" style="background:#00ffff" onclick="window.execCmd('foreColor','#00ffff')"></div>
-                                <div class="color-chip" style="background:#0000ff" onclick="window.execCmd('foreColor','#0000ff')"></div>
-                                <div class="color-chip" style="background:#ff00ff" onclick="window.execCmd('foreColor','#ff00ff')"></div>
-                                <div class="color-chip" style="background:#777777" onclick="window.execCmd('foreColor','#777777')"></div>
-                                <div class="color-chip" style="background:#aaaaaa" onclick="window.execCmd('foreColor','#aaaaaa')"></div>
-                                <input type="color" style="grid-column: span 3; width:100%; height:25px; border:none; background:none; cursor:pointer;" onchange="window.execCmd('foreColor', this.value)">
+                        <button class="tool-btn" onclick="window.execCmd('strikeThrough')">S</button>
+                        
+                        <div style="position:relative; display:inline-block;">
+                            <button class="tool-btn" onclick="toggleMenu(event, 'colorMenu')" style="border-bottom: 3px solid var(--gold);">색상</button>
+                            <div id="colorMenu" class="popup-menu" style="width:150px;">
+                                <span class="menu-title">글자색 선택</span>
+                                <div class="color-grid">
+                                    <div class="color-chip" style="background:#ffffff" onclick="window.execCmd('foreColor','#ffffff')"></div>
+                                    <div class="color-chip" style="background:#000000" onclick="window.execCmd('foreColor','#000000')"></div>
+                                    <div class="color-chip" style="background:#D4AF37" onclick="window.execCmd('foreColor','#D4AF37')"></div>
+                                    <div class="color-chip" style="background:#ff0000" onclick="window.execCmd('foreColor','#ff0000')"></div>
+                                    <div class="color-chip" style="background:#00ff00" onclick="window.execCmd('foreColor','#00ff00')"></div>
+                                    <div class="color-chip" style="background:#0000ff" onclick="window.execCmd('foreColor','#0000ff')"></div>
+                                    <div class="color-chip" style="background:#ffff00" onclick="window.execCmd('foreColor','#ffff00')"></div>
+                                    <div class="color-chip" style="background:#ff8800" onclick="window.execCmd('foreColor','#ff8800')"></div>
+                                    <div class="color-chip" style="background:#ff00ff" onclick="window.execCmd('foreColor','#ff00ff')"></div>
+                                    <input type="color" style="width:25px; height:25px; padding:0; border:none; background:none;" onchange="window.execCmd('foreColor', this.value)">
+                                </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="tool-group">
                         <button class="tool-btn" onclick="window.execCmd('justifyLeft')">⬅️</button>
                         <button class="tool-btn" onclick="window.execCmd('justifyCenter')">↔️</button>
                         <button class="tool-btn" onclick="window.execCmd('justifyRight')">➡️</button>
                     </div>
+
                     <div class="tool-group">
+                        <button class="tool-btn" onclick="window.execCmd('insertHorizontalRule')">ㅡ 구분선</button>
                         <button class="tool-btn" onclick="window.execCmd('formatBlock', 'blockquote')">❝ 인용구</button>
+                        
+                        <div style="position:relative; display:inline-block;">
+                            <button class="tool-btn" onclick="toggleMenu(event, 'symbolMenu')">Ω 기호</button>
+                            <div id="symbolMenu" class="popup-menu symbol-grid">
+                                <div class="symbol-item" onclick="insertSymbol('★')">★</div><div class="symbol-item" onclick="insertSymbol('☆')">☆</div><div class="symbol-item" onclick="insertSymbol('○')">○</div><div class="symbol-item" onclick="insertSymbol('●')">●</div><div class="symbol-item" onclick="insertSymbol('◎')">◎</div><div class="symbol-item" onclick="insertSymbol('◆')">◆</div>
+                                <div class="symbol-item" onclick="insertSymbol('→')">→</div><div class="symbol-item" onclick="insertSymbol('←')">←</div><div class="symbol-item" onclick="insertSymbol('↑')">↑</div><div class="symbol-item" onclick="insertSymbol('↓')">↓</div><div class="symbol-item" onclick="insertSymbol('↔')">↔</div><div class="symbol-item" onclick="insertSymbol('✔')">✔</div>
+                                <div class="symbol-item" onclick="insertSymbol('※')">※</div><div class="symbol-item" onclick="insertSymbol('▶')">▶</div><div class="symbol-item" onclick="insertSymbol('◁')">◁</div><div class="symbol-item" onclick="insertSymbol('▼')">▼</div><div class="symbol-item" onclick="insertSymbol('▲')">▲</div><div class="symbol-item" onclick="insertSymbol('■')">■</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tool-group">
                         <button class="tool-btn" onclick="window.insertLink()">🔗 링크</button>
                         <button class="tool-btn" onclick="window.insertVideo()">🎬 영상</button>
-                        <button class="tool-btn" onclick="window.insertExternalImg()" style="background:var(--gold); color:#000;">🖼️ 사진 주소 넣기</button>
+                        <button class="tool-btn" onclick="window.insertExternalImg()" style="background:var(--gold); color:#000;">🖼️ 사진주소</button>
                     </div>
                 </div>
 
@@ -184,15 +190,15 @@
 
         <div class="bottom-bar">
             <div class="file-zone">
-                <label>📁 파일첨부</label>
+                <label style="color:var(--gold); font-size:0.8rem; font-weight:bold;">📁 파일첨부</label>
                 <input type="file" id="attachIn" style="font-size:0.7rem; width:120px; color:#999;">
-                <span style="color:#555; font-size:0.8rem;">또는 주소입력:</span>
-                <input type="text" id="manualFileUrl" placeholder="https://..." style="background:#000; border:1px solid #444; color:#fff; padding:5px; border-radius:5px; width:150px; font-size:0.8rem;">
-                <input type="text" id="attachPw" placeholder="비번" style="width:60px;">
+                <input type="text" id="manualFileUrl" placeholder="주소" style="background:#000; border:1px solid #444; color:#fff; padding:5px; border-radius:5px; width:100px; font-size:0.8rem;">
+                <input type="text" id="attachPw" placeholder="비번" style="background:#000; border:1px solid #444; color:#fff; padding:5px; border-radius:5px; width:50px; font-size:0.8rem;">
+                <button id="delAttachBtn" onclick="deleteExistingFile()" style="display:none; background:#ff4444; color:#fff; border:none; padding:5px 10px; border-radius:5px; font-size:0.7rem; cursor:pointer; font-weight:bold; margin-left:5px;">현재 파일 삭제</button>
             </div>
             <button class="btn btn-cancel" onclick="location.href='/admin'">취소</button>
-            <button class="btn btn-draft-load" id="loadDraftBtn" onclick="openDrafts()">📂 임시저장 불러오기</button>
-            <button class="btn btn-draft-save" onclick="window.saveDraft()">💾 현재 글 임시저장</button>
+            <button class="btn" style="background:#333; color:var(--gold); border:1px solid var(--gold);" onclick="openDrafts()">📂 불러오기</button>
+            <button class="btn" style="background:#222; color:#ccc; border:1px solid #444;" onclick="window.saveDraft()">💾 임시저장</button>
             <button class="btn btn-save" onclick="window.savePost()" id="saveBtn">발행하기</button>
         </div>
     </div>
@@ -210,31 +216,21 @@
         let uploadCount = 0;
         let savedSelection = null;
 
-        // 선택 영역 저장 및 복구용 유틸리티
         function saveSelection() {
-            if (window.getSelection) {
-                const sel = window.getSelection();
-                if (sel.getRangeAt && sel.rangeCount) {
-                    savedSelection = sel.getRangeAt(0);
-                }
-            }
+            const sel = window.getSelection();
+            if (sel.getRangeAt && sel.rangeCount) savedSelection = sel.getRangeAt(0);
         }
-
         function restoreSelection() {
             if (savedSelection) {
-                if (window.getSelection) {
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(savedSelection);
-                }
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedSelection);
             }
         }
 
         window.onload = async function() {
-            // 에디터 클릭 시 선택 영역 업데이트
             document.getElementById('pContent').addEventListener('mouseup', saveSelection);
             document.getElementById('pContent').addEventListener('keyup', saveSelection);
-            
             if (editId) {
                 const doc = await db.collection('posts').doc(editId).get();
                 if (doc.exists) {
@@ -244,100 +240,97 @@
                     document.getElementById('pContent').innerHTML = data.content;
                     mainThumb = data.image;
                     if(mainThumb) addImgToGrid(mainThumb, false);
-                    if(data.fileUrl) {
-                        window.currentFileUrl = data.fileUrl;
-                        document.getElementById('manualFileUrl').value = data.fileUrl;
-                        document.getElementById('attachPw').value = data.filePw || "";
+                    if(data.fileUrl) { 
+                        window.currentFileUrl = data.fileUrl; 
+                        document.getElementById('manualFileUrl').value = data.fileUrl; 
+                        document.getElementById('attachPw').value = data.filePw || ""; 
+                        document.getElementById('delAttachBtn').style.display = 'inline-block';
                     }
                 }
             }
         };
 
-        function togglePalette(e) { 
-            e.stopPropagation(); 
-            saveSelection(); // 팔레트 열기 전 선택 영역 저장
-            const p = document.getElementById('palette'); 
-            p.style.display = p.style.display === 'grid' ? 'none' : 'grid'; 
-        }
-        function hidePalette(e) { document.getElementById('palette').style.display = 'none'; }
-
-        // 명령 실행 통합 함수 (강화됨)
-        window.execCmd = (c, v=null) => { 
-            document.getElementById('pContent').focus();
-            if (savedSelection) restoreSelection();
+        async function deleteExistingFile() {
+            if(!editId || !window.currentFileUrl) return;
+            if(!confirm('현재 첨부된 파일을 서버에서 영구 삭제할까요?\n삭제 후 하단의 [발행하기]를 눌러야 글에 최종 반영됩니다.')) return;
             
-            // 이미지 정렬 특수 처리
-            if (c === 'justifyCenter' || c === 'justifyLeft' || c === 'justifyRight') {
+            document.getElementById('statusInfo').style.display = 'block';
+            document.getElementById('statusInfo').innerText = "파일 삭제 중...";
+            
+            try {
+                if (window.currentFileUrl.includes('firebasestorage')) {
+                    try { await storage.refFromURL(window.currentFileUrl).delete(); } catch(e) { console.warn(e); }
+                }
+                window.currentFileUrl = "";
+                document.getElementById('manualFileUrl').value = "";
+                document.getElementById('attachPw').value = "";
+                document.getElementById('delAttachBtn').style.display = 'none';
+                alert('파일이 서버에서 삭제되었습니다.\n[발행하기]를 눌러 글 정보를 업데이트해 주세요.');
+            } catch(e) { alert('삭제 실패: ' + e.message); }
+            document.getElementById('statusInfo').style.display = 'none';
+        }
+
+        function toggleMenu(e, menuId) {
+            e.stopPropagation();
+            saveSelection();
+            document.querySelectorAll('.popup-menu').forEach(m => { if(m.id !== menuId) m.style.display = 'none'; });
+            const menu = document.getElementById(menuId);
+            menu.style.display = (menu.style.display === 'block' || menu.style.display === 'grid') ? 'none' : (menuId === 'symbolMenu' ? 'grid' : 'block');
+        }
+        function hideAllMenus() { document.querySelectorAll('.popup-menu').forEach(m => m.style.display = 'none'); }
+
+        window.execCmd = (c, v=null) => {
+            const editor = document.getElementById('pContent');
+            const scrollPos = document.querySelector('.content-area').scrollTop;
+            editor.focus({preventScroll: true});
+            restoreSelection();
+            
+            if ((c === 'justifyCenter' || c === 'justifyLeft' || c === 'justifyRight')) {
                 const sel = window.getSelection();
                 if (sel.rangeCount > 0) {
                     const node = sel.anchorNode.parentNode;
-                    if (node && node.tagName === 'IMG' || (sel.anchorNode.childNodes && sel.anchorNode.childNodes[sel.anchorOffset] && sel.anchorNode.childNodes[sel.anchorOffset].tagName === 'IMG')) {
-                        const targetImg = node.tagName === 'IMG' ? node : sel.anchorNode.childNodes[sel.anchorOffset];
+                    const targetImg = node.tagName === 'IMG' ? node : (sel.anchorNode.childNodes && sel.anchorNode.childNodes[sel.anchorOffset] && sel.anchorNode.childNodes[sel.anchorOffset].tagName === 'IMG' ? sel.anchorNode.childNodes[sel.anchorOffset] : null);
+                    if(targetImg) {
                         const align = c.replace('justify', '').toLowerCase();
                         targetImg.style.display = 'block';
-                        if (align === 'center') { targetImg.style.margin = '30px auto'; }
+                        if (align === 'center') targetImg.style.margin = '30px auto';
                         else if (align === 'left') { targetImg.style.margin = '30px 0'; targetImg.style.marginLeft = '0'; }
                         else if (align === 'right') { targetImg.style.margin = '30px 0'; targetImg.style.marginLeft = 'auto'; targetImg.style.marginRight = '0'; }
-                        saveSelection();
-                        return;
+                        saveSelection(); return;
                     }
                 }
             }
-            
-            document.execCommand(c, false, v); 
-            saveSelection(); 
-            if(c==='foreColor') hidePalette(); 
-        };
-
-        window.setFontSize = (s) => { 
-            document.getElementById('pContent').focus();
-            if (savedSelection) restoreSelection();
-            document.execCommand('fontSize', false, s); 
+            document.execCommand(c, false, v);
             saveSelection();
+            hideAllMenus();
+            document.querySelector('.content-area').scrollTop = scrollPos;
         };
 
-        async function openDrafts() {
-            const modal = document.getElementById('draftModal');
-            const list = document.getElementById('draftList');
-            modal.style.display = 'flex';
-            list.innerHTML = "임시저장된 글을 찾는 중...";
-            try {
-                const snap = await db.collection('posts').where('status', '==', 'draft').get();
-                if(snap.empty) { list.innerHTML = "임시저장된 글이 없습니다."; return; }
-                let drafts = [];
-                snap.forEach(doc => { const data = doc.data(); drafts.push({ id: doc.id, ...data }); });
-                drafts.sort((a, b) => (b.updatedAt ? b.updatedAt.toMillis() : 0) - (a.updatedAt ? a.updatedAt.toMillis() : 0));
-                list.innerHTML = "";
-                drafts.forEach(d => {
-                    const item = document.createElement('div');
-                    item.className = 'draft-item';
-                    item.innerHTML = `<b>${d.title || '제목 없음'}</b><span>${d.updatedAt ? d.updatedAt.toDate().toLocaleString() : '날짜 정보 없음'}</span>`;
-                    item.onclick = () => {
-                        if(confirm('작성 중인 내용을 지우고 불러올까요?')) {
-                            document.getElementById('pTitle').value = d.title || "";
-                            document.getElementById('pCategory').value = d.category || "건강재테크";
-                            document.getElementById('pContent').innerHTML = d.content || "";
-                            mainThumb = d.image || "";
-                            editId = d.id; 
-                            closeDrafts();
-                        }
-                    };
-                    list.appendChild(item);
-                });
-            } catch(e) { list.innerHTML = "오류: " + e.message; }
-        }
-        function closeDrafts() { document.getElementById('draftModal').style.display = 'none'; }
+        window.insertSymbol = (sym) => {
+            const editor = document.getElementById('pContent');
+            const scrollPos = document.querySelector('.content-area').scrollTop;
+            editor.focus({preventScroll: true});
+            restoreSelection();
+            document.execCommand('insertText', false, sym);
+            saveSelection();
+            hideAllMenus();
+            document.querySelector('.content-area').scrollTop = scrollPos;
+        };
+
+        window.setFontSize = (s) => { document.getElementById('pContent').focus(); restoreSelection(); document.execCommand('fontSize', false, s); saveSelection(); };
+        window.insertLink = () => { const u = prompt("URL:"); if(u) { document.getElementById('pContent').focus(); restoreSelection(); document.execCommand('createLink', false, u); saveSelection(); } };
+        window.insertExternalImg = () => { const u = prompt("이미지 주소:"); if(u) { const tag = `<img src="${u}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;">`; document.getElementById('pContent').focus(); restoreSelection(); document.execCommand('insertHTML', false, tag + '<br>'); saveSelection(); } };
+        window.insertVideo = () => { const u = prompt("YouTube URL:"); if(u) { const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); if(id) { document.getElementById('pContent').focus(); restoreSelection(); window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); saveSelection(); } } };
 
         window.processImgs = async function(input) {
             const files = Array.from(input.files);
             document.getElementById('statusInfo').style.display = 'block';
             for (const file of files) {
-                uploadCount++;
                 try {
                     const dataUrl = await resizeImg(file, 800, 0.4); 
                     const imgItem = addImgToGrid(dataUrl, true);
                     uploadToStorage(file.name, dataUrl, imgItem);
-                } catch (err) { uploadCount--; }
+                } catch (err) {}
             }
             document.getElementById('statusInfo').style.display = 'none';
             input.value = "";
@@ -352,13 +345,10 @@
                 imgItem.querySelector('.btn-ins').onclick = () => window.insertBody(serverUrl);
                 imgItem.querySelector('.btn-rep').onclick = () => window.setMainImg(serverUrl, imgItem);
                 if(!mainThumb) window.setMainImg(serverUrl, imgItem);
-                uploadCount--;
             } catch (e) {
                 imgItem.classList.remove('uploading');
                 imgItem.querySelector('.btn-ins').onclick = () => window.insertBody(dataUrl);
                 imgItem.querySelector('.btn-rep').onclick = () => window.setMainImg(dataUrl, imgItem);
-                if(!mainThumb) window.setMainImg(dataUrl, imgItem);
-                uploadCount--;
             }
         }
 
@@ -401,147 +391,68 @@
         window.insertBody = function(src) {
             const tag = `<img src="${src}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;">`;
             document.getElementById('pContent').focus();
-            if (savedSelection) restoreSelection();
+            restoreSelection();
             document.execCommand('insertHTML', false, tag + '<br>');
             saveSelection();
         }
 
         window.savePost = async function() {
             const content = document.getElementById('pContent').innerHTML;
-            if (new Blob([content]).size > 950000) return alert("❌ [용량 초과] 사진이 너무 많습니다.");
             const title = document.getElementById('pTitle').value;
             if(!title) return alert("제목을 입력하세요!");
-            
-            const statusInfo = document.getElementById('statusInfo');
             const saveBtn = document.getElementById('saveBtn');
-            
             saveBtn.disabled = true;
-            statusInfo.innerText = "파일 업로드 중...";
-            statusInfo.style.display = 'block';
-
+            document.getElementById('statusInfo').style.display = 'block';
             let fileUrl = document.getElementById('manualFileUrl').value || window.currentFileUrl || "";
             const fileInput = document.getElementById('attachIn');
-            
             try {
                 if(fileInput.files[0]) {
                     const f = fileInput.files[0];
-                    if (f.size > 20 * 1024 * 1024) { 
-                        alert("❌ [용량 초과] 파일이 너무 큽니다. (최대 20MB)");
-                        throw new Error("size_limit");
-                    }
-                    statusInfo.innerText = "파일 실제 업로드 중 (Firebase Storage)...";
                     const ref = storage.ref().child(`attachments/${Date.now()}_${f.name}`);
-                    const uploadTask = ref.put(f);
-                    const snap = await uploadTask;
+                    const snap = await ref.put(f);
                     fileUrl = await snap.ref.getDownloadURL();
                 }
-
-                statusInfo.innerText = "데이터 저장 중 (Firestore)...";
-                const postData = { 
-                    title, 
-                    category: document.getElementById('pCategory').value, 
-                    content, 
-                    image: mainThumb, 
-                    fileUrl: fileUrl,
-                    filePw: document.getElementById('attachPw').value || "",
-                    date: new Date().toLocaleDateString(), 
-                    status: 'published', 
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-                };
-
+                const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, fileUrl, filePw: document.getElementById('attachPw').value || "", date: new Date().toLocaleDateString(), status: 'published', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (editId) await db.collection('posts').doc(editId).update(postData);
                 else await db.collection('posts').add(postData);
-                
-                statusInfo.style.display = 'none';
-                alert('정상 발행되었습니다!'); 
-                location.href = '/admin';
-            } catch(e) { 
-                console.error("Critical Error:", e);
-                statusInfo.style.display = 'none';
-                saveBtn.disabled = false;
-                if(e.message !== "size_limit") {
-                    alert('🚨 업로드/저장 실패!\n원인: ' + e.message + '\n\n(참고: 주소 설정이나 권한 문제일 수 있습니다.)');
-                }
-            }
+                alert('정상 발행되었습니다!'); location.href = '/admin';
+            } catch(e) { alert('실패: ' + e.message); saveBtn.disabled = false; }
+            document.getElementById('statusInfo').style.display = 'none';
         }
 
         window.saveDraft = async function() {
             const content = document.getElementById('pContent').innerHTML;
             const title = document.getElementById('pTitle').value || "제목 없음";
-            const statusInfo = document.getElementById('statusInfo');
-            
-            statusInfo.innerText = "임시저장 중...";
-            statusInfo.style.display = 'block';
-            
-            let fileUrl = document.getElementById('manualFileUrl').value || window.currentFileUrl || "";
-            const fileInput = document.getElementById('attachIn');
-            
+            document.getElementById('statusInfo').style.display = 'block';
             try {
-                if(fileInput.files[0]) {
-                    const f = fileInput.files[0];
-                    if (f.size > 20 * 1024 * 1024) { 
-                        alert("❌ [용량 초과] 파일이 너무 큽니다. (최대 20MB)");
-                        throw new Error("size_limit");
-                    }
-                    const ref = storage.ref().child(`attachments/${Date.now()}_${f.name}`);
-                    const snap = await ref.put(f);
-                    fileUrl = await snap.ref.getDownloadURL();
-                }
-
-                const postData = { 
-                    title, 
-                    category: document.getElementById('pCategory').value, 
-                    content, 
-                    image: mainThumb, 
-                    fileUrl: fileUrl,
-                    filePw: document.getElementById('attachPw').value || "",
-                    status: 'draft', 
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-                };
-
+                const postData = { title, category: document.getElementById('pCategory').value, content, image: mainThumb, status: 'draft', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (editId) await db.collection('posts').doc(editId).update(postData);
                 else { const res = await db.collection('posts').add(postData); editId = res.id; }
-                
-                statusInfo.style.display = 'none';
                 alert('임시 저장되었습니다.');
-            } catch(e) { 
-                statusInfo.style.display = 'none';
-                if(e.message !== "size_limit") alert('실패: ' + e.message); 
-            }
+            } catch(e) { alert('실패: ' + e.message); }
+            document.getElementById('statusInfo').style.display = 'none';
         }
 
-        window.insertLink = () => { 
-            const u = prompt("URL:"); 
-            if(u) {
-                document.getElementById('pContent').focus();
-                if (savedSelection) restoreSelection();
-                document.execCommand('createLink', false, u);
-                saveSelection();
-            }
-        };
-
-        window.insertExternalImg = () => {
-            const u = prompt("이미지 주소(URL)를 입력하세요:\n(예: https://.../image.jpg)");
-            if(u) {
-                const tag = `<img src="${u}" style="max-width:100%; display:block; margin:30px auto; border-radius:15px;" onerror="alert('유효하지 않은 이미지 주소입니다.')">`;
-                document.getElementById('pContent').focus();
-                if (savedSelection) restoreSelection();
-                document.execCommand('insertHTML', false, tag + '<br>');
-                saveSelection();
-            }
-        };
-        window.insertVideo = () => { 
-            const u = prompt("YouTube URL:"); 
-            if(u) { 
-                const id = u.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^#\&\?]*)/); 
-                if(id) {
-                    document.getElementById('pContent').focus();
-                    if (savedSelection) restoreSelection();
-                    window.execCmd('insertHTML', `<div style="text-align:center;"><iframe width="100%" height="400" src="https://www.youtube.com/embed/${id[1]}" frameborder="0" allowfullscreen></iframe></div><br>`); 
-                    saveSelection();
-                }
-            } 
-        };
+        async function openDrafts() {
+            const modal = document.getElementById('draftModal');
+            const list = document.getElementById('draftList');
+            modal.style.display = 'flex';
+            list.innerHTML = "찾는 중...";
+            try {
+                const snap = await db.collection('posts').where('status', '==', 'draft').get();
+                if(snap.empty) { list.innerHTML = "없음"; return; }
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const item = document.createElement('div');
+                    item.style.padding = '10px'; item.style.borderBottom = '1px solid #333'; item.style.cursor = 'pointer';
+                    item.innerHTML = `<b>${d.title}</b><br><small>${d.updatedAt ? d.updatedAt.toDate().toLocaleString() : ''}</small>`;
+                    item.onclick = () => { document.getElementById('pTitle').value = d.title; document.getElementById('pCategory').value = d.category; document.getElementById('pContent').innerHTML = d.content; editId = doc.id; closeDrafts(); };
+                    list.appendChild(item);
+                });
+            } catch(e) { list.innerHTML = "오류"; }
+        }
+        function closeDrafts() { document.getElementById('draftModal').style.display = 'none'; }
     </script>
 </body>
 </html>

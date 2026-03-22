@@ -1,0 +1,15 @@
+{
+  "short_name": "FIT-FLUENCE",
+  "name": "FIT-FLUENCE 프리미엄 건강 플랫폼",
+  "icons": [
+    {
+      "src": "og-image.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "theme_color": "#050505",
+  "background_color": "#050505"
+}

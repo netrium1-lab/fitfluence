@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FIT-FLUENCE 프리미엄 행운권 추첨</title>
+
+    <!-- 오픈 그래프 (OG) 태그 -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fitflunce.web.app/lucky.html">
+    <meta property="og:title" content="[FIT-FLUENCE] 🎁 프리미엄 행운권 이벤트">
+    <meta property="og:description" content="0001~1000번 사이 행운의 번호를 맞추고 특별한 건강 선물을 받으세요! (무료 참여)">
+    <meta property="og:image" content="https://fitflunce.web.app/lucky-og.png">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --gold: #D4AF37; --metallic-gold: linear-gradient(135deg, #D4AF37 0%, #F2E3B1 50%, #D4AF37 100%); --bg: #050505; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
+        body { background: var(--bg); color: #fff; min-height: 100vh; padding: 20px; display: flex; justify-content: center; }
+        
+        .main-container { width: 100%; max-width: 600px; background: #111; padding: 40px 25px; border-radius: 30px; border: 1px solid var(--gold); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; }
+        .logo { font-weight: 900; color: var(--gold); font-size: 1.5rem; margin-bottom: 5px; }
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 30px; }
+
+        .section-title { font-size: 1.1rem; color: var(--gold); font-weight: bold; margin: 40px 0 15px; text-align: left; border-left: 4px solid var(--gold); padding-left: 10px; }
+        
+        .input-group { margin-bottom: 15px; text-align: left; }
+        input { width: 100%; padding: 18px; background: #000; border: 1px solid #333; color: #fff; border-radius: 15px; font-size: 1.1rem; outline: none; }
+
+        .prize-table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 15px; overflow: hidden; margin-bottom: 20px; }
+        .prize-table th, .prize-table td { padding: 15px; text-align: center; border-bottom: 1px solid #222; }
+        .prize-table th { background: #222; color: var(--gold); font-size: 0.85rem; }
+        .win-badge { background: rgba(212,175,55,0.2); color: var(--gold); font-weight: 900; padding: 4px 10px; border-radius: 5px; }
+        .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
+        .status-open { color: #00ff88; border: 1px solid #00ff88; }
+        .status-closed { color: #ff4444; border: 1px solid #ff4444; background: rgba(255,68,68,0.1); }
+
+        .survey-q { margin-bottom: 20px; text-align: left; background: #161616; padding: 20px; border-radius: 15px; border: 1px solid #222; }
+        .survey-q b { display: block; margin-bottom: 12px; color: #eee; }
+        .opt-btn { display: inline-block; padding: 10px 15px; background: #222; border: 1px solid #333; border-radius: 10px; margin: 0 8px 8px 0; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .opt-btn.active { background: var(--gold); color: #000; font-weight: bold; }
+
+        #lotterySection { display: none; margin-top: 40px; padding-top: 40px; border-top: 2px dashed #333; }
+        .draw-board { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .prize-card { background: #1a1a1a; border: 1px solid #333; padding: 15px; border-radius: 15px; position: relative; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+        .prize-card.won { border-color: #ff0055; background: rgba(255,0,85,0.1); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        
+        .win-num-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: var(--gold); opacity: 0; transition: 0.3s; border-radius: 15px; z-index: 10; }
+        .win-num-overlay.show { opacity: 1; }
+        .win-num-overlay small { font-size: 0.7rem; color: #fff; margin-top: 5px; }
+
+        .btn-main { background: var(--metallic-gold); color: #000; padding: 22px; width: 100%; border: none; border-radius: 100px; font-weight: 900; font-size: 1.3rem; cursor: pointer; box-shadow: 0 10px 30px rgba(212,175,55,0.3); }
+        .btn-draw { background: #fff; color: #000; padding: 20px; border-radius: 100px; font-weight: 900; font-size: 1.2rem; cursor: pointer; width: 100%; border: none; margin-top: 15px; }
+        .btn-draw:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        #drawCountInfo { margin-top: 15px; font-weight: bold; color: var(--gold); }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="logo">FIT-FLUENCE</div>
+        <h1>🎁 프리미엄 행운권 이벤트</h1>
+        <p style="color:#aaa; font-size:0.9rem;">성함 입력과 건강 설문에 응답하신 분들께<br><b>행운권 추첨 기회 5회</b>를 드립니다!</p>
+
+        <div class="section-title">1. 참여자 정보 입력</div>
+        <div class="input-group"><input type="text" id="uName" placeholder="성함을 입력하세요"></div>
+        <div class="input-group"><input type="tel" id="uPhone" placeholder="연락처를 입력하세요"></div>
+
+        <div class="section-title">2. 경품 및 당첨번호 안내</div>
+        <table class="prize-table">
+            <thead><tr><th>상 명칭</th><th>시상품</th><th>당첨번호</th><th>상태</th></tr></thead>
+            <tbody id="prizeTableBody"><tr><td colspan="4">데이터 로딩 중...</td></tr></tbody>
+        </table>
+
+        <div class="section-title">3. 맞춤 상담 설문지</div>
+        <div id="evSurveyArea">설문을 불러오는 중...</div>
+
+        <button class="btn-main" id="startEventBtn" onclick="unlockLottery()">설문 완료 및 추첨 시작하기</button>
+
+        <div id="lotterySection">
+            <div class="logo">LUCKY DRAW ZONE</div>
+            <h2 style="margin-bottom:10px;">✨ 번호를 뽑으세요!</h2>
+            <p style="color:#888; font-size:0.8rem; margin-bottom:20px;">0001~1000 사이의 번호가 랜덤으로 추첨됩니다.</p>
+            
+            <div class="draw-board" id="drawBoard"></div>
+            <div id="drawCountInfo">남은 기회: 5번</div>
+            <button class="btn-draw" id="drawBtn" onclick="doDraw()">번호 추첨하기</button>
+            
+            <div id="finalAction" style="display:none; margin-top:30px;">
+                <button class="btn-main" onclick="finalSave()">결과 저장 및 종료</button>
+            </div>
+        </div>
+
+        <div style="margin-top:40px; padding-top:20px; border-top:1px solid #222;">
+            <button onclick="location.href='/'" style="background:transparent; border:1px solid #444; color:#777; padding:15px 30px; border-radius:50px; cursor:pointer; font-weight:bold; font-size:0.9rem;">✕ 창 닫기</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.firebasestorage.app", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let userData = { name: '', phone: '', answers: [], drawResults: [], winnerPrizes: [] };
+        let prizes = [];
+        let claimedPrizes = new Set();
+        let drawCount = 0;
+        let sessionNumbers = new Set();
+
+        window.onload = async function() {
+            // 1. 이미 당첨된 경품 목록 확인 (중복 방지용)
+            const lotterySnap = await db.collection('lottery').get();
+            lotterySnap.forEach(doc => {
+                const data = doc.data();
+                if(data.winnerPrizes) data.winnerPrizes.forEach(p => claimedPrizes.add(p));
+            });
+
+            // 2. 경품 정보 로드
+            const pDoc = await db.collection('config').doc('lotteryPrizes').get();
+            if(pDoc.exists) {
+                prizes = pDoc.data().items;
+                document.getElementById('prizeTableBody').innerHTML = prizes.map(p => {
+                    const isClaimed = claimedPrizes.has(p.name);
+                    return `<tr>
+                        <td>${p.name}</td>
+                        <td><b>${p.val}</b></td>
+                        <td><span class="win-badge">${p.winNum || '????'}</span></td>
+                        <td><span class="status-badge ${isClaimed ? 'status-closed' : 'status-open'}">${isClaimed ? '당첨완료' : '추첨중'}</span></td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // 3. 설문 문항 로드
+            const sDoc = await db.collection('config').doc('lotterySurvey').get();
+            const sItems = sDoc.exists ? sDoc.data().items : [];
+            document.getElementById('evSurveyArea').innerHTML = sItems.map((s, i) => `
+                <div class="survey-q" data-q="${s.t}">
+                    <b>${i+1}. ${s.t}</b>
+                    ${(s.o || "").split(',').map(opt => `<div class="opt-btn" onclick="selOpt(this)">${opt.trim()}</div>`).join('')}
+                </div>
+            `).join('');
+        }
+
+        function selOpt(el) {
+            el.parentElement.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function unlockLottery() {
+            const name = document.getElementById('uName').value;
+            const phone = document.getElementById('uPhone').value;
+            if(!name || !phone) return alert('성함과 연락처를 입력해주세요.');
+
+            const qs = document.querySelectorAll('.survey-q');
+            let allAnswered = true;
+            userData.answers = [];
+            qs.forEach(q => {
+                const act = q.querySelector('.opt-btn.active');
+                if(!act) allAnswered = false;
+                else userData.answers.push(`${q.getAttribute('data-q')}: ${act.innerText}`);
+            });
+            if(!allAnswered && qs.length > 0) return alert('모든 설문에 답해주세요!');
+
+            userData.name = name; userData.phone = phone;
+
+            document.getElementById('drawBoard').innerHTML = prizes.map((p, i) => `
+                <div class="prize-card" id="pc-${i}">
+                    <div style="font-size:0.7rem; color:#666;">${p.name}</div>
+                    <div style="font-size:0.85rem; font-weight:bold;">${p.val}</div>
+                    <div class="win-num-overlay" id="wno-${i}">0000<small></small></div>
+                </div>
+            `).join('');
+
+            document.getElementById('startEventBtn').style.display = 'none';
+            document.getElementById('lotterySection').style.display = 'block';
+            window.scrollTo({ top: document.getElementById('lotterySection').offsetTop - 50, behavior: 'smooth' });
+        }
+
+        async function doDraw() {
+            if(drawCount >= 5) return;
+            const btn = document.getElementById('drawBtn');
+            btn.disabled = true;
+
+            const cards = document.querySelectorAll('.prize-card');
+            let ani = setInterval(() => {
+                cards.forEach(c => c.style.borderColor = '#333');
+                cards[Math.floor(Math.random()*cards.length)].style.borderColor = '#D4AF37';
+            }, 80);
+
+            setTimeout(async () => {
+                clearInterval(ani);
+                cards.forEach(c => c.style.borderColor = '#333');
+                
+                // 1. 유니크한 랜덤 번호 생성 (0001~1000)
+                let num, luckyStr;
+                do {
+                    num = Math.floor(Math.random() * 1000) + 1;
+                    luckyStr = String(num).padStart(4, '0');
+                } while (sessionNumbers.has(luckyStr));
+                sessionNumbers.add(luckyStr);
+                
+                // 2. 당첨 여부 확인
+                let winIdx = -1;
+                prizes.forEach((p, i) => { if(p.winNum === luckyStr) winIdx = i; });
+
+                if(winIdx !== -1) {
+                    // 당첨 가능성 있음! 서버에서 중복 확인
+                    const prizeName = prizes[winIdx].name;
+                    const checkSnap = await db.collection('lottery').where('winnerPrizes', 'array-contains', prizeName).get();
+                    
+                    if(checkSnap.empty) {
+                        // 진짜 당첨!
+                        const card = document.getElementById('pc-' + winIdx);
+                        const overlay = document.getElementById('wno-' + winIdx);
+                        card.classList.add('won');
+                        overlay.innerHTML = `${luckyStr}<small>🎊 당첨 축하드립니다!</small>`;
+                        overlay.classList.add('show');
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#D4AF37', '#ffffff', '#ff0055'] });
+                        
+                        userData.drawResults.push({ num: luckyStr, isWin: true, prizeName });
+                        userData.winnerPrizes.push(prizeName);
+                        claimedPrizes.add(prizeName); // 세션 내 실시간 갱신
+                    } else {
+                        // 아쉽게도 이미 누군가 받아감 -> 꽝 처리
+                        showLoss(luckyStr, cards);
+                    }
+                } else {
+                    // 꽝
+                    showLoss(luckyStr, cards);
+                }
+
+                drawCount++;
+                document.getElementById('drawCountInfo').innerText = `남은 기회: ${5 - drawCount}번`;
+                
+                if(drawCount < 5) btn.disabled = false;
+                else {
+                    btn.style.display = 'none';
+                    document.getElementById('finalAction').style.display = 'block';
+                }
+            }, 1500);
+        }
+
+        function showLoss(luckyStr, cards) {
+            const emptyIdx = Array.from(cards).findIndex((c, idx) => !document.getElementById('wno-'+idx).classList.contains('show'));
+            if(emptyIdx !== -1) {
+                const overlay = document.getElementById('wno-' + emptyIdx);
+                overlay.innerHTML = `${luckyStr}<small>아쉽습니다!</small>`;
+                overlay.classList.add('show');
+            }
+            userData.drawResults.push({ num: luckyStr, isWin: false });
+        }
+
+        async function finalSave() {
+            try {
+                await db.collection('lottery').add({ ...userData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('참여가 완료되었습니다. 감사합니다!');
+                location.href = '/';
+            } catch(e) { alert('오류: ' + e.message); }
+        }
+    </script>
+</body>
+</html>

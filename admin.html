@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <style>
         :root { --gold: #D4AF37; --black: #050505; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; display: flex; background: #f4f4f4; height: 100vh; color: #333; }
@@ -35,16 +36,21 @@
     </style>
 </head>
 <body id="adminBody" style="display:none;">
+    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2></div>
+
     <div class="sidebar">
         <h2>FIT-FLUENCE 관리</h2>
-        <div class="menu-item active" onclick="showTab('design', this)">⚙️ 사이트/배너 설정</div>
+        <div class="menu-item active" onclick="showTab('design', this)">⚙️ 사이트 설정</div>
         <div class="menu-item" onclick="showTab('posts', this)">📝 게시글 관리</div>
-        <div class="menu-item" onclick="showTab('survey', this)">📋 설문 주제 생성</div>
+        <div class="menu-item" onclick="showTab('survey', this)">📋 혈액분석 설문 관리</div>
+        <div class="menu-item" onclick="showTab('event_config', this)">🎁 행운권/경품 설정</div>
+        <div class="menu-item" onclick="showTab('lottery', this)">👤 행운권 참여 명단</div>
         <div class="menu-item" onclick="showTab('consult', this)">👤 상담 신청 명단</div>
         <div style="margin-top:auto;"><a href="/" style="text-decoration:none; color:#999; font-weight:bold;">홈페이지 보기 →</a></div>
     </div>
 
     <div class="main">
+        <!-- 1. 사이트 설정 -->
         <div id="design" class="tab active">
             <div class="card">
                 <h1>⚙️ 사이트 정보 및 배너</h1>
@@ -59,6 +65,7 @@
             </div>
         </div>
 
+        <!-- 2. 게시글 관리 -->
         <div id="posts" class="tab">
             <div class="card">
                 <h1>📝 게시글 관리</h1>
@@ -73,23 +80,53 @@
             </div>
         </div>
 
+        <!-- 3. 혈액분석 설문 관리 -->
         <div id="survey" class="tab">
             <div class="card">
-                <h1>📋 설문 주제 생성</h1>
+                <h1>📋 혈액분석 신청 설문 관리</h1>
                 <div class="form-group">
-                    <label>주제</label><input type="text" id="newT" placeholder="예: 현재 건강 상태는 어떤가요?">
+                    <label>질문 주제</label><input type="text" id="newT" placeholder="예: 현재 건강 상태는 어떤가요?">
                     <br><br>
-                    <label>옵션(콤마구분)</label><input type="text" id="newO" placeholder="예: 매우좋음, 보통, 관리필요">
-                    <button class="btn" id="addBtn" onclick="addTopic()">주제 추가</button>
+                    <label>답변 옵션 (쉼표로 구분)</label><input type="text" id="newO" placeholder="예: 매우좋음, 보통, 관리필요">
+                    <button class="btn" onclick="addTopic()">주제 추가</button>
                 </div>
                 <div id="topicList"></div>
             </div>
         </div>
 
+        <!-- 4. 행운권 이벤트 설정 -->
+        <div id="event_config" class="tab">
+            <div class="card">
+                <h1>🎁 행운권 경품 및 당첨번호 설정</h1>
+                <p style="color:#888; margin-bottom:20px;">각 상에 맞는 시상품과 당첨될 행운번호(0001~1000)를 지정하세요.</p>
+                <div id="prizeInputs"></div>
+                <button class="btn-sub" onclick="addPrizeInput()">+ 상 추가하기</button>
+                <button class="btn" onclick="savePrizes()" style="margin-top:20px;">경품 설정 저장</button>
+            </div>
+            <div class="card">
+                <h1>📋 행운권 전용 건강설문</h1>
+                <div class="form-group">
+                    <label>질문 내용</label><input type="text" id="evQ">
+                    <label style="margin-top:10px;">답변 옵션 (쉼표로 구분)</label><input type="text" id="evO">
+                    <button class="btn-sub" onclick="addEvSurvey()" style="margin-top:10px;">질문 추가</button>
+                </div>
+                <div id="evSurveyList"></div>
+            </div>
+        </div>
+
+        <!-- 5. 행운권 참여 명단 -->
+        <div id="lottery" class="tab">
+            <div class="card">
+                <h1>👤 행운권 이벤트 참여 명단</h1>
+                <table><thead><tr><th>날짜</th><th>성함/연락처</th><th>설문 응답</th><th>추첨 번호들</th><th>관리</th></tr></thead><tbody id="lList"></tbody></table>
+            </div>
+        </div>
+
+        <!-- 6. 상담 신청 명단 -->
         <div id="consult" class="tab">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h1>👤 상담 신청 명단</h1>
+                    <h1>👤 상담 신청 명단 (혈액분석)</h1>
                     <button class="btn-mini active" onclick="downloadExcel()" style="padding:10px 20px;">📊 엑셀파일 내려받기</button>
                 </div>
                 <table><thead><tr><th>날짜</th><th>성함</th><th>연락처</th><th>진단내용</th></tr></thead><tbody id="cList"></tbody></table>
@@ -97,12 +134,11 @@
         </div>
     </div>
 
-    <div id="statusOverlay"><h2 id="statusMsg">처리 중...</h2></div>
-
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDTKx0Jz4gjZRE9I9PCacHnpHxCW2yeRDM", authDomain: "fitflunce.firebaseapp.com", projectId: "fitflunce", storageBucket: "fitflunce.firebasestorage.app", messagingSenderId: "186695294427", appId: "1:186695294427:web:c2b9ddaed28624bbcc5bfe" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const storage = firebase.storage();
 
         if (sessionStorage.getItem('fit_auth') !== 'true') { location.href = '/'; }
         else { document.getElementById('adminBody').style.display = 'flex'; }
@@ -114,9 +150,14 @@
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             document.getElementById(id).classList.add('active'); el.classList.add('active');
-            if(id === 'consult') loadC(); if(id === 'posts') loadP(); if(id === 'survey') renderTopics();
+            if(id === 'consult') loadC(); 
+            if(id === 'posts') loadP(); 
+            if(id === 'survey') renderTopics();
+            if(id === 'event_config') loadEventConfig();
+            if(id === 'lottery') loadL();
         }
 
+        // --- 사이트 설정 ---
         async function pickHero(i) {
             if(!i.files[0]) return;
             const reader = new FileReader();
@@ -137,16 +178,15 @@
             hideStatus();
         }
 
+        // --- 게시글 관리 ---
         let globalPosts = [];
         let currentPostView = 'published';
-
         function switchPostView(status) {
             currentPostView = status;
             document.getElementById('btn-pub').classList.toggle('active', status === 'published');
             document.getElementById('btn-draft').classList.toggle('active', status === 'draft');
             renderPostTable();
         }
-
         async function loadP() {
             showStatus("불러오는 중...");
             const snap = await db.collection('posts').get();
@@ -155,30 +195,22 @@
             renderPostTable();
             hideStatus();
         }
-
         function renderPostTable() {
             const filtered = globalPosts.filter(p => (p.status || 'published') === currentPostView);
             document.getElementById('pTable').innerHTML = filtered.map((p, i) => {
                 const isSpecial = p.category === '프리미엄 카드형' || p.category === '커뮤니티';
-                return `
-                <tr>
+                return `<tr>
                     <td><button class="move-btn" onclick="movePost(${i}, -1)">▲</button><br><button class="move-btn" onclick="movePost(${i}, 1)">▼</button></td>
                     <td><span class="cate-badge ${isSpecial ? 'special' : ''}">${p.category}</span></td>
                     <td><b>${p.title}</b></td>
                     <td>
-                        <button onclick="toggleExpose('${p.id}', ${p.showHome !== false})" class="btn-mini ${p.showHome !== false ? 'active' : ''}" style="width:100px;">${p.showHome !== false ? '✅ 노출' : '❌ 숨김'}</button>
-                        <button onclick="location.href='editor.html?id=${p.id}'" style="color:blue;border:none;background:none;cursor:pointer;">수정</button>
-                        <button onclick="delP('${p.id}')" style="color:red;border:none;background:none;cursor:pointer;margin-left:10px;">삭제</button>
+                        <button onclick="toggleExpose('${p.id}', ${p.showHome !== false})" class="btn-mini ${p.showHome !== false ? 'active' : ''}">${p.showHome !== false ? '노출중' : '숨김'}</button>
+                        <button onclick="location.href='editor.html?id=${p.id}'" class="btn-mini">수정</button>
+                        <button onclick="delP('${p.id}')" style="color:red; border:none; background:none; cursor:pointer; margin-left:5px;">삭제</button>
                     </td>
                 </tr>`;
             }).join('');
         }
-
-        async function toggleExpose(id, cur) {
-            await db.collection('posts').doc(id).update({ showHome: !cur });
-            await loadP();
-        }
-
         async function movePost(idx, dir) {
             const filtered = globalPosts.filter(p => (p.status || 'published') === currentPostView);
             const nIdx = idx + dir;
@@ -190,9 +222,20 @@
             globalPosts.forEach((post, i) => batch.update(db.collection('posts').doc(post.id), { sortIndex: i }));
             await batch.commit();
         }
+        async function toggleExpose(id, cur) { await db.collection('posts').doc(id).update({ showHome: !cur }); loadP(); }
+        async function delP(id) {
+            if(confirm('게시물과 첨부파일을 영구 삭제할까요?')) {
+                showStatus("삭제 중...");
+                const doc = await db.collection('posts').doc(id).get();
+                const data = doc.data();
+                if (data.image && data.image.includes('firebasestorage')) try { await storage.refFromURL(data.image).delete(); } catch(e) {}
+                if (data.fileUrl && data.fileUrl.includes('firebasestorage')) try { await storage.refFromURL(data.fileUrl).delete(); } catch(e) {}
+                await db.collection('posts').doc(id).delete();
+                loadP();
+            }
+        }
 
-        async function delP(id) { if(confirm('삭제할까요?')) { await db.collection('posts').doc(id).delete(); await loadP(); } }
-
+        // --- 혈액분석 설문 관리 ---
         async function addTopic() {
             const t = document.getElementById('newT').value, o = document.getElementById('newO').value;
             if(!t || !o) return;
@@ -203,82 +246,118 @@
             document.getElementById('newT').value = ""; document.getElementById('newO').value = "";
             renderTopics();
         }
-
         async function renderTopics() {
             const doc = await db.collection('config').doc('surveyMaster').get();
             let s = doc.exists ? doc.data().items : [];
             document.getElementById('topicList').innerHTML = s.map((t, i) => `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><div><b>${t.t}</b><br><small>${t.o}</small></div><button onclick="delT(${i})" style="color:red;border:none;background:none;cursor:pointer;">삭제</button></div>`).join('');
         }
+        async function delT(i) {
+            const doc = await db.collection('config').doc('surveyMaster').get();
+            let s = doc.data().items; s.splice(i, 1);
+            await db.collection('config').doc('surveyMaster').set({ items: s });
+            renderTopics();
+        }
 
-        async function delT(i) { const doc = await db.collection('config').doc('surveyMaster').get(); let s = doc.data().items; s.splice(i, 1); await db.collection('config').doc('surveyMaster').set({ items: s }); renderTopics(); }
+        // --- 행운권 이벤트 설정 ---
+        function addPrizeInput(name='', val='', winNum='') {
+            const div = document.createElement('div');
+            div.className = 'form-group'; div.style.display = 'flex'; div.style.gap = '10px'; div.style.alignItems = 'center';
+            div.innerHTML = `
+                <input type="text" placeholder="상 이름" value="${name}" class="p-name" style="flex:1;"> 
+                <input type="text" placeholder="시상품" value="${val}" class="p-val" style="flex:1.5;"> 
+                <input type="text" placeholder="당첨번호(4자리)" value="${winNum}" class="p-win" style="flex:0.8;">
+                <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">X</button>`;
+            document.getElementById('prizeInputs').appendChild(div);
+        }
+        async function loadEventConfig() {
+            showStatus("불러오는 중...");
+            const pDoc = await db.collection('config').doc('lotteryPrizes').get();
+            document.getElementById('prizeInputs').innerHTML = "";
+            if(pDoc.exists) pDoc.data().items.forEach(p => addPrizeInput(p.name, p.val, p.winNum));
+            else { ['1등 상', '2등 상', '3등 상', '참가 상'].forEach(n => addPrizeInput(n, '')); }
+            const sDoc = await db.collection('config').doc('lotterySurvey').get();
+            renderEvSurvey(sDoc.exists ? sDoc.data().items : []);
+            hideStatus();
+        }
+        async function savePrizes() {
+            const items = [];
+            document.querySelectorAll('#prizeInputs .form-group').forEach(div => {
+                const name = div.querySelector('.p-name').value, val = div.querySelector('.p-val').value, winNum = div.querySelector('.p-win').value;
+                if(name) items.push({name, val, winNum});
+            });
+            await db.collection('config').doc('lotteryPrizes').set({ items });
+            alert("경품 및 당첨번호가 저장되었습니다.");
+        }
+        async function addEvSurvey() {
+            const t = document.getElementById('evQ').value, o = document.getElementById('evO').value;
+            if(!t) return;
+            const doc = await db.collection('config').doc('lotterySurvey').get();
+            let s = doc.exists ? doc.data().items : []; s.push({t, o});
+            await db.collection('config').doc('lotterySurvey').set({ items: s });
+            document.getElementById('evQ').value = ""; document.getElementById('evO').value = "";
+            renderEvSurvey(s);
+        }
+        function renderEvSurvey(items) {
+            document.getElementById('evSurveyList').innerHTML = items.map((t, i) => `<div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><div><b>${t.t}</b><br><small>${t.o}</small></div><button onclick="delEvS(${i})" style="color:red;border:none;background:none;cursor:pointer;">삭제</button></div>`).join('');
+        }
+        async function delEvS(i) {
+            const doc = await db.collection('config').doc('lotterySurvey').get();
+            let s = doc.data().items; s.splice(i, 1);
+            await db.collection('config').doc('lotterySurvey').set({ items: s });
+            renderEvSurvey(s);
+        }
 
+        // --- 행운권 참여 명단 ---
+        async function loadL() {
+            const snap = await db.collection('lottery').orderBy('createdAt','desc').get();
+            let html = "";
+            snap.forEach(doc => {
+                const l = doc.data();
+                const draws = (l.drawResults || []).map(d => `<span class="cate-badge ${d.isWin ? 'special' : ''}">${d.num}${d.isWin ? '(당첨!)' : ''}</span>`).join(' ');
+                html += `<tr><td>${l.createdAt ? new Date(l.createdAt.seconds*1000).toLocaleString() : ''}</td><td><b>${l.name}</b><br>${l.phone}</td><td style="font-size:0.8rem;">${(l.answers || []).join('<br>')}</td><td>${draws}</td><td><button onclick="delLRec('${doc.id}')" style="color:red;border:none;background:none;cursor:pointer;">삭제</button></td></tr>`;
+            });
+            document.getElementById('lList').innerHTML = html;
+        }
+        async function delLRec(id) { if(confirm('삭제할까요?')) { await db.collection('lottery').doc(id).delete(); loadL(); } }
+
+        // --- 상담 신청 명단 및 엑셀 ---
         async function loadC() {
             const snap = await db.collection('consults').orderBy('createdAt','desc').get();
             let html = ""; snap.forEach(doc => { const c = doc.data(); html += `<tr><td>${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : ''}</td><td><b>${c.name}</b></td><td>${c.phone}</td><td>${(c.answers||[]).join(', ')}</td></tr>`; });
             document.getElementById('cList').innerHTML = html;
         }
-
-        async function exportData() {
-            showStatus("백업 준비 중...");
-            try {
-                const data = {};
-                const collections = ['posts', 'consults', 'config'];
-                for(const c of collections) {
-                    const snap = await db.collection(c).get();
-                    data[c] = [];
-                    snap.forEach(doc => data[c].push({id: doc.id, ...doc.data()}));
-                }
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `fitfluence_backup_${new Date().toLocaleDateString()}.json`;
-                a.click();
-                hideStatus();
-                alert("백업 파일이 생성되었습니다.");
-            } catch(e) { hideStatus(); alert("백업 실패: " + e.message); }
+        async function downloadExcel() {
+            const snap = await db.collection('consults').orderBy('createdAt','desc').get();
+            let csv = "\ufeff날짜,성함,연락처,진단내용\n";
+            snap.forEach(doc => { const c = doc.data(); csv += `${c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : ''},${c.name},${c.phone},${(c.answers||[]).join(' | ')}\n`; });
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `상담신청자명단.csv`; a.click();
         }
 
+        // --- 데이터 백업/복구 ---
+        async function exportData() {
+            showStatus("백업 중...");
+            const data = {}; const collections = ['posts', 'consults', 'config', 'lottery'];
+            for(const c of collections) { const snap = await db.collection(c).get(); data[c] = []; snap.forEach(doc => data[c].push({id: doc.id, ...doc.data()})); }
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fitfluence_backup.json`; a.click();
+            hideStatus();
+        }
         async function importData() {
-            const input = document.createElement('input');
-            input.type = 'file'; input.accept = '.json';
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
             input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                if(!confirm("복구를 진행하면 기존 데이터와 충돌할 수 있습니다. 계속할까요?")) return;
-                showStatus("데이터 복구 중...");
+                const file = e.target.files[0]; if(!file || !confirm("복구할까요?")) return;
+                showStatus("복구 중...");
                 const reader = new FileReader();
                 reader.onload = async (re) => {
-                    try {
-                        const data = JSON.parse(re.target.result);
-                        for(const col in data) {
-                            for(const item of data[col]) {
-                                const {id, ...content} = item;
-                                await db.collection(col).doc(id).set(content, {merge: true});
-                            }
-                        }
-                        hideStatus(); alert("데이터 복구가 완료되었습니다. 페이지를 새로고침하세요.");
-                        location.reload();
-                    } catch(err) { hideStatus(); alert("복구 실패: " + err.message); }
+                    const data = JSON.parse(re.target.result);
+                    for(const col in data) { for(const item of data[col]) { const {id, ...content} = item; await db.collection(col).doc(id).set(content, {merge: true}); } }
+                    hideStatus(); location.reload();
                 };
                 reader.readAsText(file);
             };
             input.click();
-        }
-
-        async function downloadExcel() {
-            const snap = await db.collection('consults').orderBy('createdAt','desc').get();
-            let csv = "\ufeff날짜,성함,연락처,진단내용\n";
-            snap.forEach(doc => {
-                const c = doc.data();
-                const date = c.createdAt ? new Date(c.createdAt.seconds*1000).toLocaleString() : '';
-                const answers = (c.answers||[]).join(' | ').replace(/,/g, '');
-                csv += `${date},${c.name},${c.phone},${answers}\n`;
-            });
-            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `상담신청자명단_${new Date().toLocaleDateString()}.csv`;
-            a.click();
         }
 
         window.onload = async function() {

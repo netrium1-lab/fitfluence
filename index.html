@@ -15,6 +15,14 @@
     <meta property="og:description" content="혈액검사 분석으로 시작하는 똑똑한 건강관리, 핏플루언서그룹과 함께하세요.">
     <meta property="og:image" content="https://fitflunce.web.app/og-image.png">
 
+    <!-- 홈 화면 바로가기 아이콘 설정 (PWA) -->
+    <link rel="icon" type="image/png" href="og-image.png">
+    <link rel="apple-touch-icon" href="og-image.png">
+    <link rel="manifest" href="manifest.json?v=2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FIT-FLUENCE">
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://fitflunce.web.app/">
@@ -84,6 +92,9 @@
 
         .post-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 3000; padding: 15px; overflow-y: auto; }
         .post-inner { max-width: 850px; margin: 20px auto; background: #111; border-radius: 25px; border: 1px solid #222; padding: 25px; }
+        .post-body { font-size: 1.1rem; line-height: 1.9; color: #ddd; }
+        .post-body blockquote { border-left: 5px solid var(--gold); padding: 15px 25px; margin: 25px 0; background: rgba(212,175,55,0.05); font-style: italic; color: #ccc; }
+        .post-body hr { border: 0; height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0; }
         .post-body img { max-width: 100%; border-radius: 15px; margin: 20px 0; display: block; }
         .close-post-btn { background: var(--gold); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; width: 100%; margin-top: 20px; }
 
@@ -103,6 +114,7 @@
         <section class="hero-banners">
             <div class="cta-wrap">
                 <button class="main-cta" onclick="openSurvey()">혈액검사 분석방법 신청</button>
+                <button class="main-cta" style="background: linear-gradient(135deg, #ff0055 0%, #ff8800 100%); color:#fff;" onclick="location.href='lucky.html'">🎁 행운권 추첨 이벤트</button>
                 <button class="sub-cta" onclick="window.open('https://open.kakao.com/o/gJPgFg7h', '_blank')">핏플루언서그룹 커뮤니티</button>
             </div>
         </section>
@@ -135,6 +147,7 @@
         <div class="post-inner">
             <article>
                 <div id="modalHeader" style="border-bottom:1px solid #333; margin-bottom:30px; padding-bottom:20px;">
+                    <button onclick="copyCurrentUrl()" style="float:right; background:#222; color:var(--gold); border:1px solid var(--gold); padding:5px 12px; border-radius:5px; font-size:0.8rem; cursor:pointer;">🔗 주소 복사</button>
                     <p id="modalCate" style="color:var(--gold); font-weight:bold; margin-bottom:10px; font-size:0.9rem;"></p>
                     <h2 id="modalTitle" style="font-size:1.8rem; color:var(--gold);"></h2>
                 </div>
@@ -152,44 +165,24 @@
         function enterAdmin() { var pw = prompt('보안 코드'); if(pw === "7777") { sessionStorage.setItem('fit_auth','true'); location.href='/admin'; } }
         function sel(el) { var opts = el.parentElement.querySelectorAll('.opt'); opts.forEach(o => o.classList.remove('act')); el.classList.add('act'); }
         function closeSurvey() { document.getElementById('surveyModal').style.display='none'; document.body.style.overflow='auto'; }
-        function closePost() { document.getElementById('postModal').style.display='none'; document.body.style.overflow='auto'; }
-        function scrollToBottom() { document.getElementById('promoSection').scrollIntoView({behavior:'smooth'}); }
-
-        async function openSurvey() {
-            try {
-                const doc = await db.collection('config').doc('surveyMaster').get();
-                const items = doc.exists ? doc.data().items : [];
-                let html = "";
-                items.forEach((s, i) => {
-                    html += `<div class="survey-group"><b>${i+1}. ${s.t || s.q}</b>`;
-                    const opts = s.o ? s.o.split(',') : [];
-                    opts.forEach(opt => { html += `<div class="opt" onclick="sel(this)">${opt.trim()}</div>`; });
-                    html += `</div>`;
-                });
-                document.getElementById('dynamicSurvey').innerHTML = html;
-                document.getElementById('surveyModal').style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            } catch(e) { console.error(e); }
+        
+        function closePost() { 
+            document.getElementById('postModal').style.display='none'; 
+            document.body.style.overflow='auto';
+            // 주소창을 원래대로 돌림
+            if(window.location.search) {
+                history.pushState(null, '', window.location.pathname);
+            }
         }
 
-        async function submitSurvey() {
-            const name = document.getElementById('uName').value;
-            const phone = document.getElementById('uPhone').value;
-            if(!name || !phone) return alert('성함과 연락처를 입력해주세요.');
-            const groups = document.querySelectorAll('.survey-group');
-            const answers = [];
-            groups.forEach(g => {
-                const q = g.querySelector('b').innerText;
-                const act = g.querySelector('.opt.act');
-                if(act) answers.push(`${q}: ${act.innerText}`);
+        function copyCurrentUrl() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('이 게시글의 고유 주소가 복사되었습니다! 필요한 곳에 붙여넣기 하세요.');
             });
-            try {
-                await db.collection('consults').add({ name, phone, answers, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                alert('정상 접수되었습니다!'); closeSurvey();
-            } catch(e) { alert('오류: ' + e.message); }
         }
 
-        async function viewPost(id) {
+        async function viewPost(id, isInitialLoad) {
             try {
                 const doc = await db.collection('posts').doc(id).get();
                 if(!doc.exists) return;
@@ -210,26 +203,25 @@
                 }
                 
                 document.getElementById('modalBody').innerHTML = bodyHtml;
-                document.getElementById('postModal').style.display = 'block';
+                const modal = document.getElementById('postModal');
+                modal.scrollTop = 0;
+                modal.style.display = 'block';
                 document.body.style.overflow = 'hidden';
-            } catch(e) { console.error(e); }
-        }
 
-        function downloadSecureFile(url, correctPw) {
-            if(!correctPw) {
-                window.open(url, '_blank');
-                return;
-            }
-            const userPw = prompt("다운로드 비밀번호를 입력하세요.");
-            if(userPw === correctPw) {
-                window.open(url, '_blank');
-            } else if(userPw !== null) {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
+                // 가장 중요한 부분: 주소창을 강제로 바꿈
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + id;
+                window.history.replaceState({postId: id}, p.title, newUrl);
+
+            } catch(e) { console.error(e); }
         }
 
         window.onload = async function() {
             try {
+                // URL에서 ID 즉시 추출
+                const search = window.location.search;
+                const postId = search ? search.substring(1).split('&')[0].split('=')[0] : null;
+
+                // 1. 설정 및 기본 데이터 로드
                 const cfgDoc = await db.collection('config').doc('site').get();
                 if(cfgDoc.exists) {
                     const cfg = cfgDoc.data();
@@ -238,6 +230,7 @@
                     if(cfg.bannerLink) document.getElementById('link-tv').href = cfg.bannerLink;
                 }
 
+                // 2. 게시글 목록 렌더링
                 const snap = await db.collection('posts').get();
                 let ps = []; 
                 snap.forEach(d => { 
@@ -260,8 +253,31 @@
                         el.innerHTML = '<p style="color:#444; padding:20px;">콘텐츠 준비 중</p>';
                     }
                 });
+
+                // 3. 주소에 ID가 있으면 홈페이지가 아닌 게시글을 즉시 띄움
+                if(postId && postId.length > 3) { // ID가 유효한 경우에만
+                    viewPost(postId, true);
+                }
+
+                // 4. 뒤로가기 이벤트
+                window.onpopstate = function(event) {
+                    if (window.location.search) {
+                        const pid = window.location.search.substring(1);
+                        viewPost(pid, true);
+                    } else {
+                        closePost();
+                    }
+                };
+
             } catch(e) { console.error("데이터 로딩 오류:", e); }
         };
+
+        function downloadSecureFile(url, correctPw) {
+            if(!correctPw) { window.open(url, '_blank'); return; }
+            const userPw = prompt("다운로드 비밀번호를 입력하세요.");
+            if(userPw === correctPw) { window.open(url, '_blank'); } 
+            else if(userPw !== null) { alert("비밀번호가 일치하지 않습니다."); }
+        }
     </script>
 </body>
 </html>

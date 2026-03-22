@@ -14,3 +14,7 @@ npm-debug.log
 
 # Project specifics
 .DS_Store
+
+# Environment Variables
+.env
+functions/.env

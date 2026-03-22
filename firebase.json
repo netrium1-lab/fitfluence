@@ -10,10 +10,18 @@
       {
         "source": "/admin",
         "destination": "/admin.html"
+      },
+      {
+        "source": "/api/**",
+        "function": "generateScenario"
       }
     ],
     "cleanUrls": true,
     "trailingSlash": false
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
   },
   "firestore": {
     "rules": "firestore.rules",
